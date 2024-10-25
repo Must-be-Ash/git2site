@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { connectDB } from "@/lib/db";
 import { User } from "@/lib/models/user";
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const cookieStore = await cookies();

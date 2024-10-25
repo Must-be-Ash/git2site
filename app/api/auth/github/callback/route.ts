@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { connectDB } from "@/lib/db";
+import { User } from "@/lib/models/user";
+import { octokit } from "@/lib/github";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+  const state = searchParams.get("state"); // This will be the username
 
-  if (!code) {
-    return NextResponse.redirect("/login?error=missing_code");
+  if (!code || !state) {
+    return NextResponse.redirect("/login?error=missing_code_or_state");
   }
 
   try {
@@ -37,6 +41,16 @@ export async function GET(request: Request) {
 
     const userData = await userResponse.json();
 
+    // Verify and update user
+    await connectDB();
+    const user = await User.findOne({ username: state });
+    if (user && user.username === userData.login) {
+      user.isVerified = true;
+      await user.save();
+    } else {
+      return NextResponse.redirect(`/${state}?error=verification_failed`);
+    }
+
     // Set session cookie
     const cookieStore = await cookies();
     cookieStore.set("session", JSON.stringify({
@@ -54,7 +68,7 @@ export async function GET(request: Request) {
       maxAge: 60 * 60 * 24 * 7, // 1 week
     });
 
-    return NextResponse.redirect("/dashboard");
+    return NextResponse.redirect(`/${state}?verified=true`);
   } catch (error) {
     console.error("GitHub OAuth error:", error);
     return NextResponse.redirect("/login?error=server_error");

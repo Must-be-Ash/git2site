@@ -5,6 +5,9 @@ import { Repository } from '@/lib/models/repository';
 import { PortfolioHeader } from '@/components/portfolio/header';
 import { RepositoryGrid } from '@/components/portfolio/repository-grid';
 import { ThemeProvider } from '@/components/providers/theme-provider';
+import { VerificationPrompt } from '@/components/verification-prompt';
+import { RefreshButton } from '@/components/refresh-button';
+import { cookies } from 'next/headers';
 
 export async function generateMetadata({ params }: { params: { username: string } }) {
   return {
@@ -20,6 +23,7 @@ type Props = {
 
 export default async function PortfolioPage(props: Props) {
   const { username } = props.params;
+  const { verified } = props.searchParams;
   
   try {
     await connectDB();
@@ -38,6 +42,12 @@ export default async function PortfolioPage(props: Props) {
 
     console.log(`Found ${repositories.length} repositories`);
 
+    // Check if the user was just verified
+    if (verified === 'true') {
+      user.isVerified = true;
+      await user.save();
+    }
+
     return (
       <ThemeProvider
         attribute="class"
@@ -46,7 +56,9 @@ export default async function PortfolioPage(props: Props) {
       >
         <main className="min-h-screen bg-background">
           <PortfolioHeader user={user} />
+          {!user.isVerified && <VerificationPrompt username={username} />}
           <div className="container px-4 py-8">
+            <RefreshButton username={username} />
             <RepositoryGrid repositories={repositories} />
           </div>
         </main>

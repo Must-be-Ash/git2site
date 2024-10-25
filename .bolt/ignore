@@ -1,2 +1,8 @@
 components/ui/*
 hooks/use-toast.ts
+
+# .gitignore
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
