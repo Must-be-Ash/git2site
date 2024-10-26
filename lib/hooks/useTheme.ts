@@ -1,22 +1,23 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Theme, themes } from '@/lib/themes';
+import { Theme, themes, ThemeName } from '@/lib/themes';
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>('base');
+  const [themeName, setThemeName] = useState<ThemeName>('base');
 
   useEffect(() => {
-    document.body.className = `theme-${theme}`;
-    Object.entries(themes[theme].colors).forEach(([key, value]) => {
+    const theme = themes[themeName];
+    document.body.className = `theme-${themeName}`;
+    Object.entries(theme.colors).forEach(([key, value]) => {
       document.documentElement.style.setProperty(`--${key}`, value);
     });
-    document.documentElement.style.setProperty('--font-sans', themes[theme].font);
-  }, [theme]);
+    document.documentElement.style.setProperty('--font-sans', theme.font);
+  }, [themeName]);
 
-  const changeTheme = (newTheme: Theme) => {
-    setTheme(newTheme);
+  const changeTheme = (newThemeName: ThemeName) => {
+    setThemeName(newThemeName);
   };
 
-  return { theme, changeTheme };
+  return { theme: themes[themeName], changeTheme };
 }

@@ -1,15 +1,15 @@
 'use client';
 
-import { themes, Theme } from '@/lib/themes';
+import { themes, Theme, ThemeName, ThemeColors } from '@/lib/themes';
 
 interface StyledThemeProviderProps {
-  theme: Theme;
-  colors: Record<string, string>;
+  theme: Theme | ThemeName;
+  colors: ThemeColors;
   children: React.ReactNode;
 }
 
 export function StyledThemeProvider({ theme, colors, children }: StyledThemeProviderProps) {
-  const currentTheme = themes[theme] || themes.base;
+  const currentTheme = typeof theme === 'string' ? themes[theme as ThemeName] : theme;
   const mergedColors = { ...currentTheme.colors, ...colors };
 
   return (

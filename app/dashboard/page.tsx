@@ -43,6 +43,7 @@ interface Theme {
     secondary: string;
     button: string;
     'button-foreground': string;
+    tag: string;
   };
 }
 
@@ -65,6 +66,7 @@ const presetThemes: Record<string, Theme> = {
       secondary: '#3b82f6',
       button: '#3b82f6',
       'button-foreground': '#ffffff',
+      tag: '#e0e0e0',
     },
   },
   dark: {
@@ -85,6 +87,7 @@ const presetThemes: Record<string, Theme> = {
       secondary: '#10b981',
       button: '#10b981',
       'button-foreground': '#1f2937',
+      tag: '#e0e0e0',
     },
   },
   vintage: {
@@ -105,6 +108,7 @@ const presetThemes: Record<string, Theme> = {
       secondary: '#d97706',
       button: '#d97706',
       'button-foreground': '#fef3c7',
+      tag: '#e0e0e0',
     },
   },
   neon: {
@@ -125,6 +129,7 @@ const presetThemes: Record<string, Theme> = {
       secondary: '#f0abfc',
       button: '#f0abfc',
       'button-foreground': '#0f172a',
+      tag: '#e0e0e0',
     },
   },
   pastel: {
@@ -145,6 +150,7 @@ const presetThemes: Record<string, Theme> = {
       secondary: '#fb7185',
       button: '#fb7185',
       'button-foreground': '#fdf2f8',
+      tag: '#e0e0e0',
     },
   },
   forest: {
@@ -165,6 +171,7 @@ const presetThemes: Record<string, Theme> = {
       secondary: '#22c55e',
       button: '#22c55e',
       'button-foreground': '#14532d',
+      tag: '#e0e0e0',
     },
   },
   ocean: {
@@ -185,6 +192,7 @@ const presetThemes: Record<string, Theme> = {
       secondary: '#0ea5e9',
       button: '#0ea5e9',
       'button-foreground': '#f0f9ff',
+      tag: '#e0e0e0',
     },
   },
 };
@@ -218,6 +226,9 @@ export default function DashboardPage() {
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [username, setUsername] = useState('');
+  const [buttonIconColor, setButtonIconColor] = useState(customTheme.colors['button-foreground']);
+  const [accentTextColor, setAccentTextColor] = useState(customTheme.colors.primary || '#000000');
+  const [languageTagColor, setLanguageTagColor] = useState(customTheme.colors.tag || '#e0e0e0');
 
   useEffect(() => {
     fetchUserData();
@@ -228,8 +239,13 @@ export default function DashboardPage() {
       const response = await fetch('/api/user/preferences');
       if (response.ok) {
         const data = await response.json();
-        setCustomTheme(data.theme || presetThemes.default);
-        setCurrentTheme(data.theme || presetThemes.default);
+        setCustomTheme({
+          ...data.theme,
+          backgroundColor: data.theme.colors.background,
+          textColor: data.theme.colors.foreground,
+          cardColor: data.theme.colors.card,
+        });
+        setCurrentTheme(data.theme);
         setLinkedinUrl(data.socialLinks?.linkedinUrl || '');
         setTwitterUrl(data.socialLinks?.twitterUrl || '');
         setEmailAddress(data.socialLinks?.emailAddress || '');
@@ -238,6 +254,9 @@ export default function DashboardPage() {
         setBio(data.bio || '');
         setAvatarUrl(data.avatar || '');
         setUsername(data.username || '');
+        setButtonIconColor(data.theme?.colors['button-foreground'] || customTheme.colors['button-foreground']);
+        setAccentTextColor(data.theme?.colors.primary || customTheme.colors.primary);
+        setLanguageTagColor(data.theme?.colors.tag || customTheme.colors.tag);
       } else {
         toast.error('Failed to fetch user preferences');
       }
@@ -279,18 +298,13 @@ export default function DashboardPage() {
     setCustomTheme(prevTheme => {
       const updatedTheme = { ...prevTheme, [property]: value };
       
-      // Update the colors object if the property is a color
-      if (['backgroundColor', 'textColor', 'accentColor', 'cardColor'].includes(property)) {
+      if (['backgroundColor', 'textColor', 'cardColor'].includes(property)) {
         updatedTheme.colors = {
           ...prevTheme.colors,
           background: property === 'backgroundColor' ? value : prevTheme.colors.background,
           foreground: property === 'textColor' ? value : prevTheme.colors.foreground,
           card: property === 'cardColor' ? value : prevTheme.colors.card,
           'card-foreground': property === 'textColor' ? value : prevTheme.colors['card-foreground'],
-          primary: property === 'accentColor' ? value : prevTheme.colors.primary,
-          secondary: property === 'accentColor' ? value : prevTheme.colors.secondary,
-          button: property === 'accentColor' ? value : prevTheme.colors.button,
-          'button-foreground': property === 'backgroundColor' ? value : prevTheme.colors['button-foreground'],
         };
       }
 
@@ -298,52 +312,73 @@ export default function DashboardPage() {
     });
   };
 
+  const handleButtonIconColorChange = (color: string) => {
+    setButtonIconColor(color);
+    setCustomTheme(prevTheme => ({
+      ...prevTheme,
+      colors: {
+        ...prevTheme.colors,
+        'button-foreground': color,
+      },
+    }));
+  };
+
+  const handleAccentTextColorChange = (color: string) => {
+    setAccentTextColor(color);
+    setCustomTheme(prevTheme => ({
+      ...prevTheme,
+      colors: {
+        ...prevTheme.colors,
+        primary: color,
+      },
+    }));
+  };
+
+  const handleLanguageTagColorChange = (color: string) => {
+    setLanguageTagColor(color);
+    setCustomTheme(prevTheme => ({
+      ...prevTheme,
+      colors: {
+        ...prevTheme.colors,
+        tag: color,
+      },
+    }));
+  };
+
   const handleSave = async () => {
     try {
-      console.log('Saving preferences:', {
+      const preferencesToSave = {
         theme: {
-          ...customTheme,
+          name: customTheme.name,
           colors: {
             background: customTheme.backgroundColor,
             foreground: customTheme.textColor,
             card: customTheme.cardColor,
             'card-foreground': customTheme.textColor,
-            primary: customTheme.accentColor,
-            secondary: customTheme.accentColor, // You might want to add a secondary color picker
-            button: customTheme.accentColor,
-            'button-foreground': customTheme.backgroundColor,
-          }
+            primary: accentTextColor,
+            secondary: accentTextColor,
+            button: customTheme.colors.button,
+            'button-foreground': buttonIconColor,
+            tag: languageTagColor,
+            'tag-foreground': accentTextColor, // Using accentTextColor for tag text
+          },
+          font: customTheme.fontFamily,
+          buttonStyle: customTheme.buttonStyle,
+          cardStyle: customTheme.cardStyle,
         },
         socialLinks: { linkedinUrl, twitterUrl, emailAddress },
         personalDomain,
         name,
         bio,
         avatar: avatarUrl,
-      });
+      };
+
+      console.log('Saving preferences:', preferencesToSave);
 
       const response = await fetch('/api/user/preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          theme: {
-            ...customTheme,
-            colors: {
-              background: customTheme.backgroundColor,
-              foreground: customTheme.textColor,
-              card: customTheme.cardColor,
-              'card-foreground': customTheme.textColor,
-              primary: customTheme.accentColor,
-              secondary: customTheme.accentColor, // You might want to add a secondary color picker
-              button: customTheme.accentColor,
-              'button-foreground': customTheme.backgroundColor,
-            }
-          },
-          socialLinks: { linkedinUrl, twitterUrl, emailAddress },
-          personalDomain,
-          name,
-          bio,
-          avatar: avatarUrl,
-        }),
+        body: JSON.stringify(preferencesToSave),
       });
 
       if (response.ok) {
@@ -395,18 +430,18 @@ export default function DashboardPage() {
               objectFit="cover"
               className={`transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
               onLoad={() => setImageLoaded(true)}
-              onError={() => setImageLoaded(true)} // Show the image even if it fails to load
+              onError={() => setImageLoaded(true)}
             />
           </div>
         </CardHeader>
         <CardContent className="p-6 flex-grow">
-          <h2 className="text-2xl font-bold mb-2">{repo.name}</h2>
+          <h2 className="text-2xl font-bold mb-2" style={{ color: customTheme.textColor }}>{repo.name}</h2>
           <p className="mb-4" style={{ color: customTheme.textColor }}>{repo.description}</p>
           <div className="flex flex-wrap gap-2">
             {repo.languages.map(lang => (
               <span key={lang} className="text-xs px-2 py-1 rounded" style={{
-                backgroundColor: customTheme.accentColor,
-                color: customTheme.cardColor,
+                backgroundColor: languageTagColor,
+                color: accentTextColor, // Using accentTextColor for tag text
               }}>
                 {lang}
               </span>
@@ -415,9 +450,9 @@ export default function DashboardPage() {
         </CardContent>
         <CardFooter className="p-6 pt-0 flex justify-end gap-2">
           <Button variant={customTheme.buttonStyle} size="icon" asChild style={{
-            backgroundColor: customTheme.buttonStyle === 'default' ? customTheme.accentColor : 'transparent',
-            color: customTheme.buttonStyle === 'default' ? customTheme.cardColor : customTheme.accentColor,
-            borderColor: customTheme.accentColor,
+            backgroundColor: customTheme.colors.button,
+            color: customTheme.colors['button-foreground'],
+            borderColor: customTheme.colors.button,
           }}>
             <Link href={repo.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="View GitHub repository">
               <Github className="w-5 h-5" />
@@ -425,9 +460,9 @@ export default function DashboardPage() {
           </Button>
           {repo.websiteUrl && (
             <Button variant={customTheme.buttonStyle} size="icon" asChild style={{
-              backgroundColor: customTheme.buttonStyle === 'default' ? customTheme.accentColor : 'transparent',
-              color: customTheme.buttonStyle === 'default' ? customTheme.cardColor : customTheme.accentColor,
-              borderColor: customTheme.accentColor,
+              backgroundColor: customTheme.colors.button,
+              color: customTheme.colors['button-foreground'],
+              borderColor: customTheme.colors.button,
             }}>
               <Link href={repo.websiteUrl} target="_blank" rel="noopener noreferrer" aria-label="Visit project website">
                 <Globe className="w-5 h-5" />
@@ -460,46 +495,25 @@ export default function DashboardPage() {
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label htmlFor="button-style">Button Style</Label>
+           <div>
+            <Label htmlFor="font-family">Font Family</Label>
             <Select
-              value={customTheme.buttonStyle}
-              onValueChange={(value) => handleCustomThemeChange('buttonStyle', value)}
+              value={customTheme.fontFamily}
+              onValueChange={(value) => handleCustomThemeChange('fontFamily', value)}
             >
-              <SelectTrigger id="button-style">
-                <SelectValue placeholder="Select button style" />
+              <SelectTrigger id="font-family">
+                <SelectValue placeholder="Select font family" />
               </SelectTrigger>
               <SelectContent className={solidDropdownStyle}>
-                <SelectItem value="default">Default</SelectItem>
-                <SelectItem value="outline">Outline</SelectItem>
-                <SelectItem value="ghost">Ghost</SelectItem>
+                <SelectItem value="Inter, sans-serif">Inter</SelectItem>
+                <SelectItem value="Roboto, sans-serif">Roboto</SelectItem>
+                <SelectItem value="Merriweather, serif">Merriweather</SelectItem>
+                <SelectItem value="Orbitron, sans-serif">Orbitron</SelectItem>
+                <SelectItem value="Quicksand, sans-serif">Quicksand</SelectItem>
+                <SelectItem value="Cabin, sans-serif">Cabin</SelectItem>
+                <SelectItem value="Lato, sans-serif">Lato</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div>
-            <Label htmlFor="card-style">Card Style</Label>
-            <Select
-              value={customTheme.cardStyle}
-              onValueChange={(value) => handleCustomThemeChange('cardStyle', value)}
-            >
-              <SelectTrigger id="card-style">
-                <SelectValue placeholder="Select card style" />
-              </SelectTrigger>
-              <SelectContent className={solidDropdownStyle}>
-                <SelectItem value="default">Default</SelectItem>
-                <SelectItem value="bordered">Bordered</SelectItem>
-                <SelectItem value="elevated">Elevated</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="accent-color">Accent Color</Label>
-            <Input
-              id="accent-color"
-              type="color"
-              value={customTheme.accentColor}
-              onChange={(e) => handleCustomThemeChange('accentColor', e.target.value)}
-            />
           </div>
           <div>
             <Label htmlFor="background-color">Background Color</Label>
@@ -519,6 +533,23 @@ export default function DashboardPage() {
               onChange={(e) => handleCustomThemeChange('textColor', e.target.value)}
             />
           </div>
+
+          <div>
+            <Label htmlFor="card-style">Card Style</Label>
+            <Select
+              value={customTheme.cardStyle}
+              onValueChange={(value) => handleCustomThemeChange('cardStyle', value)}
+            >
+              <SelectTrigger id="card-style">
+                <SelectValue placeholder="Select card style" />
+              </SelectTrigger>
+              <SelectContent className={solidDropdownStyle}>
+                <SelectItem value="default">Default</SelectItem>
+                <SelectItem value="bordered">Bordered</SelectItem>
+                <SelectItem value="elevated">Elevated</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div>
             <Label htmlFor="card-color">Card Color</Label>
             <Input
@@ -528,25 +559,64 @@ export default function DashboardPage() {
               onChange={(e) => handleCustomThemeChange('cardColor', e.target.value)}
             />
           </div>
-          <div>
-            <Label htmlFor="font-family">Font Family</Label>
+         
+                    <div>
+            <Label htmlFor="button-style">Button Style</Label>
             <Select
-              value={customTheme.fontFamily}
-              onValueChange={(value) => handleCustomThemeChange('fontFamily', value)}
+              value={customTheme.buttonStyle}
+              onValueChange={(value) => handleCustomThemeChange('buttonStyle', value)}
             >
-              <SelectTrigger id="font-family">
-                <SelectValue placeholder="Select font family" />
+              <SelectTrigger id="button-style">
+                <SelectValue placeholder="Select button style" />
               </SelectTrigger>
               <SelectContent className={solidDropdownStyle}>
-                <SelectItem value="Inter, sans-serif">Inter</SelectItem>
-                <SelectItem value="Roboto, sans-serif">Roboto</SelectItem>
-                <SelectItem value="Merriweather, serif">Merriweather</SelectItem>
-                <SelectItem value="Orbitron, sans-serif">Orbitron</SelectItem>
-                <SelectItem value="Quicksand, sans-serif">Quicksand</SelectItem>
-                <SelectItem value="Cabin, sans-serif">Cabin</SelectItem>
-                <SelectItem value="Lato, sans-serif">Lato</SelectItem>
+                <SelectItem value="default">Default</SelectItem>
+                <SelectItem value="outline">Outline</SelectItem>
+                <SelectItem value="ghost">Ghost</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <Label htmlFor="button-color">Button Color</Label>
+            <Input
+              id="button-color"
+              type="color"
+              value={customTheme.colors.button}
+              onChange={(e) => setCustomTheme(prevTheme => ({
+                ...prevTheme,
+                colors: { ...prevTheme.colors, button: e.target.value }
+              }))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="button-icon-color">Button Icon Color</Label>
+            <Input
+              id="button-icon-color"
+              type="color"
+              value={customTheme.colors['button-foreground']}
+              onChange={(e) => setCustomTheme(prevTheme => ({
+                ...prevTheme,
+                colors: { ...prevTheme.colors, 'button-foreground': e.target.value }
+              }))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="accent-text-color">Accent Text Color</Label>
+            <Input
+              id="accent-text-color"
+              type="color"
+              value={accentTextColor}
+              onChange={(e) => handleAccentTextColorChange(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="language-tag-color">Language Tag Color</Label>
+            <Input
+              id="language-tag-color"
+              type="color"
+              value={languageTagColor}
+              onChange={(e) => handleLanguageTagColorChange(e.target.value)}
+            />
           </div>
           <div className="border-t pt-4">
             <h3 className="text-lg font-semibold mb-2">Social Links</h3>
@@ -635,7 +705,6 @@ export default function DashboardPage() {
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <header className="bg-muted p-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Portfolio Builder</h1>
           <div className="space-x-2">
             <Button onClick={handleSave}>
               <Save className="w-4 h-4 mr-2" />
@@ -665,46 +734,15 @@ export default function DashboardPage() {
                 className="rounded-full mx-auto mb-4"
               />
             )}
-            <h1 className="text-3xl font-bold mb-2">{name}</h1>
-            <p className="text-lg mb-4">{bio}</p>
-            <div className="flex justify-center space-x-4">
-              {linkedinUrl && (
-                <Button variant={customTheme.buttonStyle} size="icon" asChild>
-                  <Link href={linkedinUrl} target="_blank" rel="noopener noreferrer">
-                    <Linkedin className="w-5 h-5" />
-                  </Link>
-                </Button>
-              )}
-              {twitterUrl && (
-                <Button variant={customTheme.buttonStyle} size="icon" asChild>
-                  <Link href={twitterUrl} target="_blank" rel="noopener noreferrer">
-                    <Twitter className="w-5 h-5" />
-                  </Link>
-                </Button>
-              )}
-              {emailAddress && (
-                <Button variant={customTheme.buttonStyle} size="icon" asChild>
-                  <Link href={`mailto:${emailAddress}`}>
-                    <Mail className="w-5 h-5" />
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Projects Preview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-            {projects.map(project => (
-              <RepositoryCard key={project.id} repo={project} />
-            ))}
-          </div>
-          {/* Social Links and Personal Domain */}
+            <h1 className="text-3xl font-bold mb-2" style={{ color: accentTextColor }}>{name}</h1>
+            <p className="text-lg mb-4" style={{ color: accentTextColor }}>{bio}</p>
+                  {/* Social Links and Personal Domain */}
           <div className="mt-8 flex justify-center gap-4">
             {linkedinUrl && (
               <Button variant={customTheme.buttonStyle} size="icon" asChild style={{
-                backgroundColor: customTheme.buttonStyle === 'default' ? customTheme.accentColor : 'transparent',
-                color: customTheme.buttonStyle === 'default' ? customTheme.backgroundColor : customTheme.accentColor,
-                borderColor: customTheme.accentColor,
+                backgroundColor: customTheme.colors.button,
+                color: customTheme.colors['button-foreground'],
+                borderColor: customTheme.colors.button,
               }}>
                 <Link href={linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn Profile">
                   <Linkedin className="w-5 h-5" />
@@ -713,9 +751,9 @@ export default function DashboardPage() {
             )}
             {twitterUrl && (
               <Button variant={customTheme.buttonStyle} size="icon" asChild style={{
-                backgroundColor: customTheme.buttonStyle === 'default' ? customTheme.accentColor : 'transparent',
-                color: customTheme.buttonStyle === 'default' ? customTheme.backgroundColor : customTheme.accentColor,
-                borderColor: customTheme.accentColor,
+                backgroundColor: customTheme.colors.button,
+                color: customTheme.colors['button-foreground'],
+                borderColor: customTheme.colors.button,
               }}>
                 <Link href={twitterUrl} target="_blank" rel="noopener noreferrer" aria-label="Twitter Profile">
                   <Twitter className="w-5 h-5" />
@@ -724,9 +762,9 @@ export default function DashboardPage() {
             )}
             {emailAddress && (
               <Button variant={customTheme.buttonStyle} size="icon" asChild style={{
-                backgroundColor: customTheme.buttonStyle === 'default' ? customTheme.accentColor : 'transparent',
-                color: customTheme.buttonStyle === 'default' ? customTheme.backgroundColor : customTheme.accentColor,
-                borderColor: customTheme.accentColor,
+                backgroundColor: customTheme.colors.button,
+                color: customTheme.colors['button-foreground'],
+                borderColor: customTheme.colors.button,
               }}>
                 <Link href={`mailto:${emailAddress}`} aria-label="Email">
                   <Mail className="w-5 h-5" />
@@ -734,6 +772,17 @@ export default function DashboardPage() {
               </Button>
             )}
           </div>
+
+          </div>
+
+          {/* Projects Preview */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            {projects.map(project => (
+              <RepositoryCard key={project.id} repo={project} />
+            ))}
+          </div>
+
+    
           {personalDomain && (
             <div className="mt-4 text-center">
               <Link href={personalDomain} target="_blank" rel="noopener noreferrer" className="text-accent-foreground hover:underline">

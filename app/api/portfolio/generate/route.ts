@@ -1,45 +1,75 @@
 import { NextResponse } from 'next/server';
-import { fetchUserProfile, fetchUserRepositories } from '@/lib/github';
 import { connectDB } from '@/lib/db';
 import { User } from '@/lib/models/user';
 import { Repository } from '@/lib/models/repository';
-import { Queue } from 'bullmq';
-import Redis from 'ioredis';
-
-// Initialize Redis connection
-const redisClient = new Redis(process.env.REDIS_URL!);
-
-// Initialize BullMQ queue
-const portfolioQueue = new Queue('portfolio-generation', {
-  connection: redisClient,
-});
+import { Octokit } from '@octokit/rest';
 
 export async function POST(req: Request) {
-  console.log('Portfolio generation request received');
   try {
-    const { username } = await req.json();
-    console.log(`Queueing portfolio generation for username: ${username}`);
-    
-    if (!username) {
-      console.log('Error: Username is required');
-      return NextResponse.json(
-        { error: 'Username is required' },
-        { status: 400 }
-      );
+    const { userId } = await req.json();
+    await connectDB();
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Add job to the queue
-    await portfolioQueue.add('generate-portfolio', { username });
+    const octokit = new Octokit({ auth: user.githubAccessToken });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Portfolio generation has been queued',
+    const { data: repos } = await octokit.repos.listForAuthenticatedUser({
+      sort: 'updated',
+      per_page: 100,
     });
+
+    for (const repo of repos) {
+      let existingRepo = await Repository.findOne({ userId, name: repo.name });
+      let repoId;
+      
+      if (existingRepo) {
+        await Repository.findByIdAndUpdate(existingRepo._id, {
+          description: repo.description,
+          url: repo.html_url,
+          homepage: repo.homepage,
+          language: repo.language,
+          stars: repo.stargazers_count,
+          forks: repo.forks_count,
+          isPublic: !repo.private,
+        });
+        repoId = existingRepo._id;
+      } else {
+        const newRepo = new Repository({
+          userId,
+          name: repo.name,
+          description: repo.description,
+          url: repo.html_url,
+          homepage: repo.homepage,
+          language: repo.language,
+          stars: repo.stargazers_count,
+          forks: repo.forks_count,
+          isPublic: !repo.private,
+        });
+        await newRepo.save();
+        repoId = newRepo._id;
+      }
+
+      // Generate thumbnail
+      const thumbnailResponse = await fetch('/api/thumbnail/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          repositoryId: repoId, 
+          url: repo.homepage || repo.html_url 
+        }),
+      });
+
+      if (!thumbnailResponse.ok) {
+        console.error(`Failed to generate thumbnail for ${repo.name}`);
+      }
+    }
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error queueing portfolio generation:', error);
-    return NextResponse.json(
-      { error: 'Failed to queue portfolio generation' },
-      { status: 500 }
-    );
+    console.error('Portfolio generation error:', error);
+    return NextResponse.json({ error: 'Failed to generate portfolio' }, { status: 500 });
   }
 }

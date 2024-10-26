@@ -1,3 +1,26 @@
+          {isLoading ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+            </div>
+          ) : error ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-sm text-gray-500">
+              Failed to load preview
+            </div>
+          ) : previewUrl ? (
+            <Image
+              src={previewUrl}
+              alt={`Preview of ${repo.name}`}
+              layout="fill"
+              objectFit="cover"
+              className="transition-opacity hover:opacity-80"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-sm text-gray-500">
+              No preview available
+            </div>
+          )}
+
+
 # code insperation:
 
 ## Page Preview Service
