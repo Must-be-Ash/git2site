@@ -235,16 +235,20 @@ export default function DashboardPage() {
   const [generationProgress, setGenerationProgress] = useState(0);
 
   useEffect(() => {
+    console.log("Dashboard component mounted");
     if (user) {
+      console.log("User data available, fetching user data");
       fetchUserData();
     }
   }, [user]);
 
   const fetchUserData = async () => {
+    console.log("Fetching user data");
     try {
       const response = await fetch('/api/user/preferences');
       if (response.ok) {
         const data = await response.json();
+        console.log("User preferences fetched successfully");
         setCustomTheme({
           ...data.theme,
           backgroundColor: data.theme.colors.background,
@@ -264,14 +268,18 @@ export default function DashboardPage() {
         setAccentTextColor(data.theme?.colors.primary || customTheme.colors.primary);
         setLanguageTagColor(data.theme?.colors.tag || customTheme.colors.tag);
       } else {
+        console.error("Failed to fetch user preferences");
         toast.error('Failed to fetch user preferences');
       }
 
+      console.log("Fetching user projects");
       const projectsResponse = await fetch('/api/user/projects');
       if (projectsResponse.ok) {
         const projectsData = await projectsResponse.json();
+        console.log("User projects fetched successfully");
         setProjects(projectsData);
       } else {
+        console.error("Failed to fetch user projects");
         toast.error('Failed to fetch user projects');
       }
     } catch (error) {
@@ -416,10 +424,12 @@ export default function DashboardPage() {
 
   const generatePortfolio = async () => {
     if (!user) {
+      console.error("User not found. Cannot generate portfolio.");
       toast.error('User not found. Please log in again.');
       return;
     }
 
+    console.log("Starting portfolio generation");
     setGeneratingPortfolio(true);
     setGenerationProgress(0);
     let step = 0;
@@ -427,6 +437,7 @@ export default function DashboardPage() {
 
     while (hasMore) {
       try {
+        console.log(`Generating portfolio step ${step}`);
         const response = await fetch('/api/portfolio/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -438,9 +449,11 @@ export default function DashboardPage() {
         }
 
         const data = await response.json();
+        console.log(`Step ${step} completed. Processed ${data.processedRepos.length} repos`);
         setGenerationProgress((prev) => prev + data.processedRepos.length);
         
         if (data.nextStep === null) {
+          console.log("Portfolio generation completed");
           hasMore = false;
         } else {
           step = data.nextStep;
@@ -454,7 +467,8 @@ export default function DashboardPage() {
 
     setGeneratingPortfolio(false);
     toast.success('Portfolio generation completed');
-    fetchUserData(); // Refresh the data after generation
+    console.log("Refreshing user data after portfolio generation");
+    fetchUserData();
   };
 
   function RepositoryCard({ repo }: { repo: Project }) {
