@@ -5,17 +5,21 @@ import { User } from "@/lib/models/user";
 import { SignJWT, jwtVerify } from "jose";
 
 export async function POST(request: Request) {
+  console.log("Complete signup process started");
   try {
     const tempToken = cookies().get("temp_session")?.value;
     if (!tempToken) {
+      console.error("No temporary session found");
       return NextResponse.json({ error: "No temporary session found" }, { status: 401 });
     }
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(tempToken, secret);
 
+    console.log("Connecting to database");
     await connectDB();
 
+    console.log("Upserting user");
     const user = await User.findOneAndUpdate(
       { githubId: payload.githubId },
       {
@@ -24,15 +28,17 @@ export async function POST(request: Request) {
           githubAccessToken: payload.accessToken,
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true, lean: true }
     );
 
+    console.log("Generating new JWT");
     const newToken = await new SignJWT({ userId: user._id.toString(), username: user.username })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('7d')
       .sign(secret);
 
+    console.log("Setting new session cookie");
     cookies().set("session", newToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -42,6 +48,7 @@ export async function POST(request: Request) {
 
     cookies().delete("temp_session");
 
+    console.log("Complete signup process finished successfully");
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error completing signup:", error);

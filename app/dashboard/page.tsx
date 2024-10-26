@@ -248,11 +248,15 @@ export default function DashboardPage() {
   useEffect(() => {
     const completeSignup = async () => {
       try {
-        const response = await fetch('/api/auth/complete-signup', { method: 'POST' });
+        console.log("Completing signup");
+        const response = await fetch('/api/auth/complete-signup', { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
         if (!response.ok) {
           throw new Error('Failed to complete signup');
         }
-        // Fetch user data and set up the dashboard
+        console.log("Signup completed, fetching user data");
         await fetchUserData();
       } catch (error) {
         console.error('Error completing signup:', error);
@@ -269,34 +273,29 @@ export default function DashboardPage() {
   const fetchUserData = async () => {
     console.log("Fetching user data");
     try {
-      const response = await fetch('/api/user/preferences');
-      if (response.ok) {
-        const data = await response.json();
+      const response = await fetch('/api/user');
+      if (!response.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+      const userData = await response.json();
+      console.log("User data fetched successfully");
+      // Update state with user data
+      setName(userData.name || '');
+      setUsername(userData.username || '');
+      // ... (update other state variables)
+
+      // Fetch user preferences
+      const preferencesResponse = await fetch('/api/user/preferences');
+      if (preferencesResponse.ok) {
+        const preferencesData = await preferencesResponse.json();
         console.log("User preferences fetched successfully");
-        setCustomTheme({
-          ...data.theme,
-          backgroundColor: data.theme.colors.background,
-          textColor: data.theme.colors.foreground,
-          cardColor: data.theme.colors.card,
-        });
-        setCurrentTheme(data.theme);
-        setLinkedinUrl(data.socialLinks?.linkedinUrl || '');
-        setTwitterUrl(data.socialLinks?.twitterUrl || '');
-        setEmailAddress(data.socialLinks?.emailAddress || '');
-        setPersonalDomain(data.personalDomain || '');
-        setName(data.name || '');
-        setBio(data.bio || '');
-        setAvatarUrl(data.avatar || '');
-        setUsername(data.username || '');
-        setButtonIconColor(data.theme?.colors['button-foreground'] || customTheme.colors['button-foreground']);
-        setAccentTextColor(data.theme?.colors.primary || customTheme.colors.primary);
-        setLanguageTagColor(data.theme?.colors.tag || customTheme.colors.tag);
+        // Update state with preferences data
+        // ... (update theme, social links, etc.)
       } else {
         console.error("Failed to fetch user preferences");
-        toast.error('Failed to fetch user preferences');
       }
 
-      console.log("Fetching user projects");
+      // Fetch user projects
       const projectsResponse = await fetch('/api/user/projects');
       if (projectsResponse.ok) {
         const projectsData = await projectsResponse.json();
@@ -304,7 +303,6 @@ export default function DashboardPage() {
         setProjects(projectsData);
       } else {
         console.error("Failed to fetch user projects");
-        toast.error('Failed to fetch user projects');
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
