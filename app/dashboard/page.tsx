@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Github, Globe, Save, Linkedin, Twitter, Mail, Share2 } from 'lucide-react';
+import { Github, Globe, Save, Linkedin, Twitter, Mail, Share2, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generateThumbnail } from '@/lib/thumbnailService';
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useUser } from '@/lib/hooks/useUser'; // Add this import
 
 interface Project {
   id: string;
@@ -215,6 +216,7 @@ const cardStyles = {
 const solidDropdownStyle = "bg-background bg-white border border-input z-20";
 
 export default function DashboardPage() {
+  const { user, loading } = useUser(); // Add this line to get user information
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentTheme, setCurrentTheme] = useState<Theme>(presetThemes.default);
   const [customTheme, setCustomTheme] = useState<Theme>(presetThemes.default);
@@ -229,10 +231,14 @@ export default function DashboardPage() {
   const [buttonIconColor, setButtonIconColor] = useState(customTheme.colors['button-foreground']);
   const [accentTextColor, setAccentTextColor] = useState(customTheme.colors.primary || '#000000');
   const [languageTagColor, setLanguageTagColor] = useState(customTheme.colors.tag || '#e0e0e0');
+  const [generatingPortfolio, setGeneratingPortfolio] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
 
   useEffect(() => {
-    fetchUserData();
-  }, []);
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
 
   const fetchUserData = async () => {
     try {
@@ -406,6 +412,49 @@ export default function DashboardPage() {
     } else {
       toast.error('Username not found. Please try again later.');
     }
+  };
+
+  const generatePortfolio = async () => {
+    if (!user) {
+      toast.error('User not found. Please log in again.');
+      return;
+    }
+
+    setGeneratingPortfolio(true);
+    setGenerationProgress(0);
+    let step = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      try {
+        const response = await fetch('/api/portfolio/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, step }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate portfolio');
+        }
+
+        const data = await response.json();
+        setGenerationProgress((prev) => prev + data.processedRepos.length);
+        
+        if (data.nextStep === null) {
+          hasMore = false;
+        } else {
+          step = data.nextStep;
+        }
+      } catch (error) {
+        console.error('Error generating portfolio:', error);
+        toast.error('An error occurred while generating the portfolio');
+        break;
+      }
+    }
+
+    setGeneratingPortfolio(false);
+    toast.success('Portfolio generation completed');
+    fetchUserData(); // Refresh the data after generation
   };
 
   function RepositoryCard({ repo }: { repo: Project }) {
@@ -713,6 +762,19 @@ export default function DashboardPage() {
             <Button onClick={handleShare}>
               <Share2 className="w-4 h-4 mr-2" />
               Share
+            </Button>
+            <Button onClick={generatePortfolio} disabled={generatingPortfolio || !user}>
+              {generatingPortfolio ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating... ({generationProgress})
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Generate Portfolio
+                </>
+              )}
             </Button>
           </div>
         </header>

@@ -166,7 +166,7 @@ createPortfolio('yourGithubUsername');
                 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight text-foreground"
               >
                 Turn Your GitHub Into a{' '}
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#ff8533] to-[#ffc0fa]">
                   Stunning Portfolio
                 </span>
               </motion.h1>

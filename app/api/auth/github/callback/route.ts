@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { connectDB } from "@/lib/db";
 import { User } from "@/lib/models/user";
-import { fetchUserProfile, fetchUserRepositories } from "@/lib/github";
+import { fetchUserProfile } from "@/lib/github";
 import { SignJWT } from "jose";
 
 export async function GET(request: Request) {
@@ -51,14 +51,10 @@ export async function GET(request: Request) {
 
     const userData = await userResponse.json();
 
-    // Generate or update portfolio
     await connectDB();
     let user = await User.findOne({ username: userData.login });
     
-    const [profileData, repositories] = await Promise.all([
-      fetchUserProfile(userData.login, accessToken),
-      fetchUserRepositories(userData.login, accessToken),
-    ]);
+    const profileData = await fetchUserProfile(userData.login, accessToken);
 
     if (!user) {
       user = new User({
@@ -67,21 +63,17 @@ export async function GET(request: Request) {
         bio: profileData.bio,
         avatar: profileData.avatar,
         isVerified: true,
-        githubAccessToken: accessToken,  // Saving the access token
+        githubAccessToken: accessToken,
       });
     } else {
       user.name = profileData.name;
       user.bio = profileData.bio;
       user.avatar = profileData.avatar;
       user.isVerified = true;
-      user.githubAccessToken = accessToken;  // Updating the access token
+      user.githubAccessToken = accessToken;
     }
     await user.save();
 
-    // Update repositories
-    // (Implement this part to save repositories to the database)
-
-    // Update session cookie with signing
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const token = await new SignJWT({ userId: user._id.toString(), username: user.username })
       .setProtectedHeader({ alg: 'HS256' })
@@ -96,7 +88,6 @@ export async function GET(request: Request) {
       maxAge: 60 * 60 * 24 * 7, // 1 week
     });
 
-    // Redirect to the dashboard
     return NextResponse.redirect(new URL("/dashboard", request.url));
   } catch (error: unknown) {
     console.error("GitHub OAuth error:", error);

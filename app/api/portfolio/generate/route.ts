@@ -6,7 +6,7 @@ import { Octokit } from '@octokit/rest';
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await req.json();
+    const { userId, step = 0, perPage = 10 } = await req.json();
     await connectDB();
 
     const user = await User.findById(userId);
@@ -18,8 +18,11 @@ export async function POST(req: Request) {
 
     const { data: repos } = await octokit.repos.listForAuthenticatedUser({
       sort: 'updated',
-      per_page: 100,
+      per_page: perPage,
+      page: step + 1,
     });
+
+    const processedRepos = [];
 
     for (const repo of repos) {
       let existingRepo = await Repository.findOne({ userId, name: repo.name });
@@ -65,9 +68,17 @@ export async function POST(req: Request) {
       if (!thumbnailResponse.ok) {
         console.error(`Failed to generate thumbnail for ${repo.name}`);
       }
+
+      processedRepos.push(repoId);
     }
 
-    return NextResponse.json({ success: true });
+    const hasMore = repos.length === perPage;
+
+    return NextResponse.json({ 
+      success: true, 
+      processedRepos,
+      nextStep: hasMore ? step + 1 : null
+    });
   } catch (error) {
     console.error('Portfolio generation error:', error);
     return NextResponse.json({ error: 'Failed to generate portfolio' }, { status: 500 });
