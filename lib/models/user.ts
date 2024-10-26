@@ -15,7 +15,13 @@ const userSchema = new mongoose.Schema({
   },
   theme: {
     id: String,
-    colors: Object,
+    colors: {
+      background: String,
+      foreground: String,
+      primary: String,
+      secondary: String,
+      accent: String,
+    },
   },
   githubAccessToken: String,
 }, { timestamps: true });
