@@ -1,4 +1,30 @@
-export const themes = {
+export interface ThemeColors {
+  background: string;
+  foreground: string;
+  card: string;
+  'card-foreground': string;
+  primary: string;
+  secondary: string;
+  button: string;
+  'button-foreground': string;
+  nav?: string;
+  'nav-foreground'?: string;
+  tag?: string;
+  'tag-foreground'?: string;
+  'primary-foreground'?: string;
+}
+
+export interface Theme {
+  name: string;
+  colors: ThemeColors;
+  font: string;
+  buttonStyle: 'default' | 'outline' | 'ghost';
+  cardStyle: 'default' | 'bordered' | 'elevated';
+}
+
+export type ThemeName = 'base' | 'eighties' | 'arcade' | 'vintage' | 'windows98' | 'sinCity' | 'modern';
+
+export const themes: Record<ThemeName, Theme> = {
   base: {
     name: 'Base',
     colors: {
@@ -12,6 +38,8 @@ export const themes = {
       'button-foreground': '#ffffff',
     },
     font: 'Inter, sans-serif',
+    buttonStyle: 'default',
+    cardStyle: 'default',
   },
   eighties: {
     name: '80s',
@@ -31,6 +59,8 @@ export const themes = {
       secondary: '#00ffff',
     },
     font: 'VT323, monospace',
+    buttonStyle: 'default',
+    cardStyle: 'default',
   },
   arcade: {
     name: 'Arcade',
@@ -50,6 +80,8 @@ export const themes = {
       secondary: '#3333ff',
     },
     font: '"Press Start 2P", cursive',
+    buttonStyle: 'default',
+    cardStyle: 'default',
   },
   vintage: {
     name: 'Vintage',
@@ -69,6 +101,8 @@ export const themes = {
       secondary: '#d2b48c',
     },
     font: '"Courier New", monospace',
+    buttonStyle: 'default',
+    cardStyle: 'default',
   },
   windows98: {
     name: 'Windows 98',
@@ -88,6 +122,8 @@ export const themes = {
       secondary: '#c0c0c0',
     },
     font: '"MS Sans Serif", sans-serif',
+    buttonStyle: 'default',
+    cardStyle: 'default',
   },
   sinCity: {
     name: 'Sin City',
@@ -107,6 +143,8 @@ export const themes = {
       secondary: '#00ff00',
     },
     font: '"Oswald", sans-serif',
+    buttonStyle: 'default',
+    cardStyle: 'default',
   },
   modern: {
     name: 'Modern',
@@ -126,7 +164,9 @@ export const themes = {
       secondary: '#e0e0e0',
     },
     font: '"Inter", sans-serif',
+    buttonStyle: 'default',
+    cardStyle: 'default',
   },
 };
 
-export type Theme = keyof typeof themes;
+export const getTheme = (themeName: ThemeName): Theme => themes[themeName];

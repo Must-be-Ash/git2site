@@ -16,12 +16,18 @@ const userSchema = new mongoose.Schema({
   theme: {
     name: String,
     buttonStyle: String,
-    accentColor: String,
-    backgroundColor: String,
-    textColor: String,
-    fontFamily: String,
     cardStyle: String,
-    cardColor: String,
+    fontFamily: String,
+    colors: {
+      background: String,
+      foreground: String,
+      card: String,
+      'card-foreground': String,
+      primary: String,
+      secondary: String,
+      button: String,
+      'button-foreground': String,
+    },
   },
   socialLinks: {
     linkedinUrl: String,

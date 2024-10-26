@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generateThumbnail } from '@/lib/thumbnailService';
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 interface Project {
   id: string;
@@ -33,6 +34,16 @@ interface Theme {
   fontFamily: string;
   cardStyle: 'default' | 'bordered' | 'elevated';
   cardColor: string;
+  colors: {
+    background: string;
+    foreground: string;
+    card: string;
+    'card-foreground': string;
+    primary: string;
+    secondary: string;
+    button: string;
+    'button-foreground': string;
+  };
 }
 
 const presetThemes: Record<string, Theme> = {
@@ -45,6 +56,16 @@ const presetThemes: Record<string, Theme> = {
     fontFamily: 'Inter, sans-serif',
     cardStyle: 'default',
     cardColor: '#ffffff',
+    colors: {
+      background: '#ffffff',
+      foreground: '#000000',
+      card: '#ffffff',
+      'card-foreground': '#000000',
+      primary: '#3b82f6',
+      secondary: '#3b82f6',
+      button: '#3b82f6',
+      'button-foreground': '#ffffff',
+    },
   },
   dark: {
     name: 'Dark',
@@ -55,6 +76,16 @@ const presetThemes: Record<string, Theme> = {
     fontFamily: 'Roboto, sans-serif',
     cardStyle: 'bordered',
     cardColor: '#374151',
+    colors: {
+      background: '#1f2937',
+      foreground: '#ffffff',
+      card: '#374151',
+      'card-foreground': '#ffffff',
+      primary: '#10b981',
+      secondary: '#10b981',
+      button: '#10b981',
+      'button-foreground': '#1f2937',
+    },
   },
   vintage: {
     name: 'Vintage',
@@ -65,6 +96,16 @@ const presetThemes: Record<string, Theme> = {
     fontFamily: 'Merriweather, serif',
     cardStyle: 'elevated',
     cardColor: '#fff7ed',
+    colors: {
+      background: '#fef3c7',
+      foreground: '#292524',
+      card: '#fff7ed',
+      'card-foreground': '#292524',
+      primary: '#d97706',
+      secondary: '#d97706',
+      button: '#d97706',
+      'button-foreground': '#fef3c7',
+    },
   },
   neon: {
     name: 'Neon',
@@ -75,6 +116,16 @@ const presetThemes: Record<string, Theme> = {
     fontFamily: 'Orbitron, sans-serif',
     cardStyle: 'bordered',
     cardColor: '#1e293b',
+    colors: {
+      background: '#0f172a',
+      foreground: '#f0abfc',
+      card: '#1e293b',
+      'card-foreground': '#f0abfc',
+      primary: '#f0abfc',
+      secondary: '#f0abfc',
+      button: '#f0abfc',
+      'button-foreground': '#0f172a',
+    },
   },
   pastel: {
     name: 'Pastel',
@@ -85,6 +136,16 @@ const presetThemes: Record<string, Theme> = {
     fontFamily: 'Quicksand, sans-serif',
     cardStyle: 'default',
     cardColor: '#fce7f3',
+    colors: {
+      background: '#fdf2f8',
+      foreground: '#831843',
+      card: '#fce7f3',
+      'card-foreground': '#831843',
+      primary: '#fb7185',
+      secondary: '#fb7185',
+      button: '#fb7185',
+      'button-foreground': '#fdf2f8',
+    },
   },
   forest: {
     name: 'Forest',
@@ -95,6 +156,16 @@ const presetThemes: Record<string, Theme> = {
     fontFamily: 'Cabin, sans-serif',
     cardStyle: 'elevated',
     cardColor: '#166534',
+    colors: {
+      background: '#14532d',
+      foreground: '#dcfce7',
+      card: '#166534',
+      'card-foreground': '#dcfce7',
+      primary: '#22c55e',
+      secondary: '#22c55e',
+      button: '#22c55e',
+      'button-foreground': '#14532d',
+    },
   },
   ocean: {
     name: 'Ocean',
@@ -105,6 +176,16 @@ const presetThemes: Record<string, Theme> = {
     fontFamily: 'Lato, sans-serif',
     cardStyle: 'bordered',
     cardColor: '#e0f2fe',
+    colors: {
+      background: '#f0f9ff',
+      foreground: '#0c4a6e',
+      card: '#e0f2fe',
+      'card-foreground': '#0c4a6e',
+      primary: '#0ea5e9',
+      secondary: '#0ea5e9',
+      button: '#0ea5e9',
+      'button-foreground': '#f0f9ff',
+    },
   },
 };
 
@@ -122,6 +203,8 @@ const cardStyles = {
     border: 'none',
   },
 };
+
+const solidDropdownStyle = "bg-background bg-white border border-input z-20";
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -193,18 +276,68 @@ export default function DashboardPage() {
   };
 
   const handleCustomThemeChange = (property: keyof Theme, value: string) => {
-    const updatedTheme = { ...customTheme, [property]: value };
-    setCustomTheme(updatedTheme);
-    applyTheme(updatedTheme);
+    setCustomTheme(prevTheme => {
+      const updatedTheme = { ...prevTheme, [property]: value };
+      
+      // Update the colors object if the property is a color
+      if (['backgroundColor', 'textColor', 'accentColor', 'cardColor'].includes(property)) {
+        updatedTheme.colors = {
+          ...prevTheme.colors,
+          background: property === 'backgroundColor' ? value : prevTheme.colors.background,
+          foreground: property === 'textColor' ? value : prevTheme.colors.foreground,
+          card: property === 'cardColor' ? value : prevTheme.colors.card,
+          'card-foreground': property === 'textColor' ? value : prevTheme.colors['card-foreground'],
+          primary: property === 'accentColor' ? value : prevTheme.colors.primary,
+          secondary: property === 'accentColor' ? value : prevTheme.colors.secondary,
+          button: property === 'accentColor' ? value : prevTheme.colors.button,
+          'button-foreground': property === 'backgroundColor' ? value : prevTheme.colors['button-foreground'],
+        };
+      }
+
+      return updatedTheme;
+    });
   };
 
   const handleSave = async () => {
     try {
+      console.log('Saving preferences:', {
+        theme: {
+          ...customTheme,
+          colors: {
+            background: customTheme.backgroundColor,
+            foreground: customTheme.textColor,
+            card: customTheme.cardColor,
+            'card-foreground': customTheme.textColor,
+            primary: customTheme.accentColor,
+            secondary: customTheme.accentColor, // You might want to add a secondary color picker
+            button: customTheme.accentColor,
+            'button-foreground': customTheme.backgroundColor,
+          }
+        },
+        socialLinks: { linkedinUrl, twitterUrl, emailAddress },
+        personalDomain,
+        name,
+        bio,
+        avatar: avatarUrl,
+      });
+
       const response = await fetch('/api/user/preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          theme: customTheme,
+          theme: {
+            ...customTheme,
+            colors: {
+              background: customTheme.backgroundColor,
+              foreground: customTheme.textColor,
+              card: customTheme.cardColor,
+              'card-foreground': customTheme.textColor,
+              primary: customTheme.accentColor,
+              secondary: customTheme.accentColor, // You might want to add a secondary color picker
+              button: customTheme.accentColor,
+              'button-foreground': customTheme.backgroundColor,
+            }
+          },
           socialLinks: { linkedinUrl, twitterUrl, emailAddress },
           personalDomain,
           name,
@@ -214,8 +347,11 @@ export default function DashboardPage() {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        console.log('Preferences saved successfully:', data);
         toast.success('Preferences saved successfully!');
       } else {
+        console.error('Failed to save preferences:', await response.text());
         toast.error('Failed to save preferences');
       }
     } catch (error) {
@@ -315,7 +451,7 @@ export default function DashboardPage() {
               <SelectTrigger id="preset-theme">
                 <SelectValue placeholder="Select a preset theme" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className={solidDropdownStyle}>
                 {Object.entries(presetThemes).map(([key, theme]) => (
                   <SelectItem key={key} value={key}>
                     {theme.name}
@@ -333,7 +469,7 @@ export default function DashboardPage() {
               <SelectTrigger id="button-style">
                 <SelectValue placeholder="Select button style" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className={solidDropdownStyle}>
                 <SelectItem value="default">Default</SelectItem>
                 <SelectItem value="outline">Outline</SelectItem>
                 <SelectItem value="ghost">Ghost</SelectItem>
@@ -349,7 +485,7 @@ export default function DashboardPage() {
               <SelectTrigger id="card-style">
                 <SelectValue placeholder="Select card style" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className={solidDropdownStyle}>
                 <SelectItem value="default">Default</SelectItem>
                 <SelectItem value="bordered">Bordered</SelectItem>
                 <SelectItem value="elevated">Elevated</SelectItem>
@@ -401,7 +537,7 @@ export default function DashboardPage() {
               <SelectTrigger id="font-family">
                 <SelectValue placeholder="Select font family" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className={solidDropdownStyle}>
                 <SelectItem value="Inter, sans-serif">Inter</SelectItem>
                 <SelectItem value="Roboto, sans-serif">Roboto</SelectItem>
                 <SelectItem value="Merriweather, serif">Merriweather</SelectItem>

@@ -1,12 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { type Theme, themes } from '@/lib/themes';
-
-type ThemeColors = typeof themes[Theme]['colors'];
+import { ThemeName, ThemeColors, themes } from '@/lib/themes';
 
 interface ThemeState {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
+  theme: ThemeName;
+  setTheme: (theme: ThemeName) => void;
   customColors: ThemeColors;
   setCustomColors: (colors: ThemeColors) => void;
 }
@@ -16,7 +14,7 @@ export const useThemeStore = create<ThemeState>()(
     (set) => ({
       theme: 'base',
       customColors: themes.base.colors,
-      setTheme: (theme: Theme) => set({ 
+      setTheme: (theme: ThemeName) => set({ 
         theme,
         customColors: themes[theme].colors
       }),

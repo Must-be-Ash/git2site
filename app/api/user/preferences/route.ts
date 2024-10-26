@@ -3,6 +3,8 @@ import { connectDB } from '@/lib/db';
 import { User } from '@/lib/models/user';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   try {
     const cookieStore = cookies();
@@ -20,6 +22,8 @@ export async function GET(req: Request) {
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+
+    console.log('GET: User preferences retrieved:', JSON.stringify(user, null, 2));
 
     return NextResponse.json({ 
       theme: user.theme, 
@@ -48,11 +52,19 @@ export async function POST(req: Request) {
     const session = JSON.parse(sessionCookie.value);
     const { theme, socialLinks, personalDomain, name, bio, avatar } = await req.json();
 
+    console.log('POST: Received data:', { theme, socialLinks, personalDomain, name, bio, avatar });
+
     await connectDB();
     const user = await User.findOneAndUpdate(
       { username: session.username },
       { 
-        theme,
+        theme: {
+          name: theme.name,
+          buttonStyle: theme.buttonStyle,
+          cardStyle: theme.cardStyle,
+          fontFamily: theme.fontFamily,
+          colors: theme.colors,
+        },
         socialLinks,
         personalDomain,
         name,
@@ -65,6 +77,8 @@ export async function POST(req: Request) {
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+
+    console.log('POST: Updated user:', JSON.stringify(user, null, 2));
 
     return NextResponse.json({ 
       success: true, 

@@ -3,13 +3,24 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  images: { 
-    domains: ['avatars.githubusercontent.com', 'raw.githubusercontent.com', 'example.com'],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+      },
+      // Add other domains as needed
+    ],
   },
   experimental: {
     optimizeCss: true,
     scrollRestoration: true,
   },
+  output: 'standalone',
 };
 
 module.exports = nextConfig;

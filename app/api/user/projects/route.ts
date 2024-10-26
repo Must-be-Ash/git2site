@@ -4,6 +4,8 @@ import { User } from '@/lib/models/user';
 import { Repository } from '@/lib/models/repository';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   try {
     const cookieStore = cookies();

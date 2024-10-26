@@ -3,13 +3,16 @@ import { connectDB } from '@/lib/db';
 import { User } from '@/lib/models/user';
 import { Repository } from '@/lib/models/repository';
 import { ThemeProvider } from '@/components/providers/theme-provider';
-import { themes, Theme } from '@/lib/themes';
+import { themes, ThemeName, getTheme } from '@/lib/themes';
 import { StyledThemeProvider } from '@/components/StyledThemeProvider';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Github, Globe, Linkedin, Twitter, Mail } from 'lucide-react';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function generateMetadata({ params }: { params: { username: string } }) {
   return {
@@ -30,22 +33,35 @@ function serializeDocument(doc: any) {
 export default async function PortfolioPage({ params }: { params: { username: string } }) {
   const { username } = params;
   
+  console.log(`Attempting to load portfolio for username: ${username}`);
+
   try {
     await connectDB();
     
     const user = await User.findOne({ username });
     
     if (!user) {
+      console.log(`User not found: ${username}`);
       notFound();
     }
+
+    console.log('User found:', JSON.stringify(user, null, 2));
 
     const repositories = await Repository.find({ userId: user._id })
       .sort({ isFeatured: -1, stars: -1 });
 
+    console.log(`Repositories found: ${repositories.length}`);
+
     const serializedUser = serializeDocument(user);
     const serializedRepositories = repositories.map(serializeDocument);
 
-    const userTheme = serializedUser.theme?.id || 'base';
+    console.log('Serialized user:', JSON.stringify(serializedUser, null, 2));
+
+    const userTheme = (serializedUser.theme?.name || 'base') as ThemeName;
+    const theme = getTheme(userTheme);
+
+    console.log('User theme:', userTheme);
+    console.log('User colors:', serializedUser.theme?.colors || themes[userTheme].colors);
 
     return (
       <ThemeProvider
@@ -54,8 +70,8 @@ export default async function PortfolioPage({ params }: { params: { username: st
         forcedTheme={userTheme}
         themes={Object.keys(themes)}
       >
-        <StyledThemeProvider theme={userTheme as Theme}>
-          <main className="min-h-screen bg-background text-foreground">
+        <StyledThemeProvider theme={serializedUser.theme || 'base'} colors={serializedUser.theme?.colors || themes.base.colors}>
+          <main className="min-h-screen bg-background text-foreground" style={{fontFamily: serializedUser.theme?.fontFamily}}>
             <div className="container mx-auto px-4 py-8">
               {/* Header */}
               <div className="mb-8 text-center">
@@ -72,25 +88,19 @@ export default async function PortfolioPage({ params }: { params: { username: st
                 <p className="text-lg mb-4">{serializedUser.bio}</p>
                 <div className="flex justify-center space-x-4">
                   {serializedUser.socialLinks?.linkedinUrl && (
-                    <Button variant="outline" size="icon" asChild>
-                      <Link href={serializedUser.socialLinks.linkedinUrl} target="_blank" rel="noopener noreferrer">
-                        <Linkedin className="w-5 h-5" />
-                      </Link>
-                    </Button>
+                    <Link href={serializedUser.socialLinks.linkedinUrl} target="_blank" rel="noopener noreferrer" className="p-2 bg-card rounded-md hover:bg-opacity-80 transition-colors">
+                      <Linkedin className="w-5 h-5 text-foreground" />
+                    </Link>
                   )}
                   {serializedUser.socialLinks?.twitterUrl && (
-                    <Button variant="outline" size="icon" asChild>
-                      <Link href={serializedUser.socialLinks.twitterUrl} target="_blank" rel="noopener noreferrer">
-                        <Twitter className="w-5 h-5" />
-                      </Link>
-                    </Button>
+                    <Link href={serializedUser.socialLinks.twitterUrl} target="_blank" rel="noopener noreferrer" className="p-2 bg-card rounded-md hover:bg-opacity-80 transition-colors">
+                      <Twitter className="w-5 h-5 text-foreground" />
+                    </Link>
                   )}
                   {serializedUser.socialLinks?.emailAddress && (
-                    <Button variant="outline" size="icon" asChild>
-                      <Link href={`mailto:${serializedUser.socialLinks.emailAddress}`}>
-                        <Mail className="w-5 h-5" />
-                      </Link>
-                    </Button>
+                    <Link href={`mailto:${serializedUser.socialLinks.emailAddress}`} className="p-2 bg-card rounded-md hover:bg-opacity-80 transition-colors">
+                      <Mail className="w-5 h-5 text-foreground" />
+                    </Link>
                   )}
                 </div>
               </div>
@@ -98,7 +108,13 @@ export default async function PortfolioPage({ params }: { params: { username: st
               {/* Projects */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
                 {serializedRepositories.map((repo) => (
-                  <Card key={repo.id} className="overflow-hidden flex flex-col">
+                  <Card key={repo.id} className="overflow-hidden flex flex-col" style={{
+                    backgroundColor: serializedUser.theme?.colors?.card,
+                    color: serializedUser.theme?.colors?.['card-foreground'],
+                    borderColor: serializedUser.theme?.colors?.primary,
+                    ...(serializedUser.theme?.cardStyle === 'bordered' ? { border: `1px solid ${serializedUser.theme?.colors?.primary}` } : {}),
+                    ...(serializedUser.theme?.cardStyle === 'elevated' ? { boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' } : {}),
+                  }}>
                     <CardHeader className="p-0">
                       <div className="relative w-full h-48">
                         <Image
@@ -115,29 +131,31 @@ export default async function PortfolioPage({ params }: { params: { username: st
                       <p className="mb-4">{repo.description}</p>
                       <div className="flex flex-wrap gap-2 mb-4">
                         {repo.language && (
-                          <span className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground">
+                          <span className="text-xs px-2 py-1 rounded" style={{
+                            backgroundColor: serializedUser.theme?.colors?.primary,
+                            color: serializedUser.theme?.colors?.['primary-foreground'],
+                          }}>
                             {repo.language}
                           </span>
                         )}
                         {repo.topics?.map((topic: string) => (
-                          <span key={topic} className="text-xs px-2 py-1 rounded bg-secondary text-secondary-foreground">
+                          <span key={topic} className="text-xs px-2 py-1 rounded" style={{
+                            backgroundColor: serializedUser.theme?.colors?.secondary,
+                            color: serializedUser.theme?.colors?.['secondary-foreground'],
+                          }}>
                             {topic}
                           </span>
                         ))}
                       </div>
                     </CardContent>
                     <CardFooter className="p-6 pt-0 flex justify-end gap-2">
-                      <Button variant="outline" size="icon" asChild>
-                        <Link href={repo.url} target="_blank" rel="noopener noreferrer" aria-label="View GitHub repository">
-                          <Github className="w-5 h-5" />
-                        </Link>
-                      </Button>
+                      <Link href={repo.url} target="_blank" rel="noopener noreferrer" aria-label="View GitHub repository" className="p-2 bg-card rounded-md hover:bg-opacity-80 transition-colors">
+                        <Github className="w-5 h-5 text-foreground" />
+                      </Link>
                       {repo.homepage && (
-                        <Button variant="outline" size="icon" asChild>
-                          <Link href={repo.homepage} target="_blank" rel="noopener noreferrer" aria-label="Visit project website">
-                            <Globe className="w-5 h-5" />
-                          </Link>
-                        </Button>
+                        <Link href={repo.homepage} target="_blank" rel="noopener noreferrer" aria-label="Visit project website" className="p-2 bg-card rounded-md hover:bg-opacity-80 transition-colors">
+                          <Globe className="w-5 h-5 text-foreground" />
+                        </Link>
                       )}
                     </CardFooter>
                   </Card>
