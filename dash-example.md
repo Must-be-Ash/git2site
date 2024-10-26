@@ -1,41 +1,40 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Github, Globe, Save, Linkedin, Twitter, Mail } from 'lucide-react';
-import { toast } from 'sonner';
-import { Skeleton } from '@/components/ui/skeleton';
-import { generateThumbnail } from '@/lib/thumbnailService';
-import { Textarea } from "@/components/ui/textarea";
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Slider } from "@/components/ui/slider"
+import { Switch } from "@/components/ui/switch"
+import { Github, Globe, Save, Linkedin, Twitter, Mail } from 'lucide-react'
 
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  languages: string[];
-  githubUrl: string;
-  websiteUrl?: string;
-  thumbnailUrl: string;
-}
+// Mock data for demonstration purposes
+const mockProjects = [
+  {
+    id: 1,
+    name: 'Project Alpha',
+    description: 'A revolutionary web application that transforms the way users interact with data visualization tools, providing intuitive interfaces and real-time updates.',
+    languages: ['JavaScript', 'React', 'Node.js'],
+    githubUrl: 'https://github.com/yourusername/project-alpha',
+    websiteUrl: 'https://project-alpha.com',
+    thumbnailUrl: '/placeholder.svg?height=200&width=300',
+  },
+  {
+    id: 2,
+    name: 'Project Beta',
+    description: 'An innovative mobile app designed to streamline daily tasks and boost productivity through AI-powered suggestions and seamless integration with popular services.',
+    languages: ['Swift', 'Kotlin'],
+    githubUrl: 'https://github.com/yourusername/project-beta',
+    websiteUrl: 'https://project-beta.com',
+    thumbnailUrl: '/placeholder.svg?height=200&width=300',
+  },
+]
 
-interface Theme {
-  name: string;
-  buttonStyle: 'default' | 'outline' | 'ghost';
-  accentColor: string;
-  backgroundColor: string;
-  textColor: string;
-  fontFamily: string;
-  cardStyle: 'default' | 'bordered' | 'elevated';
-  cardColor: string;
-}
-
-const presetThemes: Record<string, Theme> = {
+const presetThemes = {
   default: {
     name: 'Default',
     buttonStyle: 'default',
@@ -106,7 +105,7 @@ const presetThemes: Record<string, Theme> = {
     cardStyle: 'bordered',
     cardColor: '#e0f2fe',
   },
-};
+}
 
 const cardStyles = {
   default: {
@@ -121,171 +120,45 @@ const cardStyles = {
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
     border: 'none',
   },
-};
+}
 
-export default function DashboardPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [currentTheme, setCurrentTheme] = useState<Theme>(presetThemes.default);
-  const [customTheme, setCustomTheme] = useState<Theme>(presetThemes.default);
-  const [linkedinUrl, setLinkedinUrl] = useState('');
-  const [twitterUrl, setTwitterUrl] = useState('');
-  const [emailAddress, setEmailAddress] = useState('');
-  const [personalDomain, setPersonalDomain] = useState('');
-  const [name, setName] = useState('');
-  const [bio, setBio] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
+export default function Component() {
+  const [projects, setProjects] = useState(mockProjects)
+  const [currentTheme, setCurrentTheme] = useState(presetThemes.default)
+  const [customTheme, setCustomTheme] = useState(presetThemes.default)
+  const [linkedinUrl, setLinkedinUrl] = useState('')
+  const [twitterUrl, setTwitterUrl] = useState('')
+  const [emailAddress, setEmailAddress] = useState('')
+  const [personalDomain, setPersonalDomain] = useState('')
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  const fetchUserData = async () => {
-    try {
-      const response = await fetch('/api/user/preferences');
-      if (response.ok) {
-        const data = await response.json();
-        setCustomTheme(data.theme || presetThemes.default);
-        setCurrentTheme(data.theme || presetThemes.default);
-        setLinkedinUrl(data.socialLinks?.linkedinUrl || '');
-        setTwitterUrl(data.socialLinks?.twitterUrl || '');
-        setEmailAddress(data.socialLinks?.emailAddress || '');
-        setPersonalDomain(data.personalDomain || '');
-        setName(data.name || '');
-        setBio(data.bio || '');
-        setAvatarUrl(data.avatar || '');
-      } else {
-        toast.error('Failed to fetch user preferences');
-      }
-
-      const projectsResponse = await fetch('/api/user/projects');
-      if (projectsResponse.ok) {
-        const projectsData = await projectsResponse.json();
-        setProjects(projectsData);
-      } else {
-        toast.error('Failed to fetch user projects');
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      toast.error('An error occurred while fetching user data');
-    }
-  };
-
-  const applyTheme = (theme: Theme) => {
-    setCustomTheme(theme);
-    document.documentElement.style.setProperty('--accent-color', theme.accentColor);
-    document.documentElement.style.setProperty('--background-color', theme.backgroundColor);
-    document.documentElement.style.setProperty('--text-color', theme.textColor);
-    document.documentElement.style.setProperty('--font-family', theme.fontFamily);
-    document.documentElement.style.setProperty('--card-color', theme.cardColor);
-  };
+  const applyTheme = (theme) => {
+    setCustomTheme(theme)
+    document.documentElement.style.setProperty('--accent-color', theme.accentColor)
+    document.documentElement.style.setProperty('--background-color', theme.backgroundColor)
+    document.documentElement.style.setProperty('--text-color', theme.textColor)
+    document.documentElement.style.setProperty('--font-family', theme.fontFamily)
+    document.documentElement.style.setProperty('--card-color', theme.cardColor)
+  }
 
   useEffect(() => {
-    applyTheme(currentTheme);
-  }, [currentTheme]);
+    applyTheme(currentTheme)
+  }, [currentTheme])
 
-  const handleThemeChange = (themeName: string) => {
-    const newTheme = presetThemes[themeName];
-    if (newTheme) {
-      setCurrentTheme(newTheme);
-    }
-  };
+  const handleThemeChange = (themeName) => {
+    setCurrentTheme(presetThemes[themeName])
+  }
 
-  const handleCustomThemeChange = (property: keyof Theme, value: string) => {
-    const updatedTheme = { ...customTheme, [property]: value };
-    setCustomTheme(updatedTheme);
-    applyTheme(updatedTheme);
-  };
+  const handleCustomThemeChange = (property, value) => {
+    const updatedTheme = { ...customTheme, [property]: value }
+    setCustomTheme(updatedTheme)
+    applyTheme(updatedTheme)
+  }
 
-  const handleSave = async () => {
-    try {
-      const response = await fetch('/api/user/preferences', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          theme: customTheme,
-          socialLinks: { linkedinUrl, twitterUrl, emailAddress },
-          personalDomain,
-          name,
-          bio,
-          avatar: avatarUrl,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success('Preferences saved successfully!');
-      } else {
-        toast.error('Failed to save preferences');
-      }
-    } catch (error) {
-      console.error('Error saving preferences:', error);
-      toast.error('An error occurred while saving preferences');
-    }
-  };
-
-  function RepositoryCard({ repo }: { repo: Project }) {
-    const [imageLoaded, setImageLoaded] = useState(false);
-
-    return (
-      <Card key={repo.id} className="overflow-hidden flex flex-col" style={{
-        backgroundColor: customTheme.cardColor,
-        color: customTheme.textColor,
-        borderColor: customTheme.accentColor,
-        ...(cardStyles[customTheme.cardStyle] as React.CSSProperties),
-      }}>
-        <CardHeader className="p-0">
-          <div className="relative w-full h-48">
-            {!imageLoaded && (
-              <Skeleton className="absolute inset-0" />
-            )}
-            <Image
-              src={repo.thumbnailUrl}
-              alt={`${repo.name} thumbnail`}
-              layout="fill"
-              objectFit="cover"
-              className={`transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-              onLoad={() => setImageLoaded(true)}
-              onError={() => setImageLoaded(true)} // Show the image even if it fails to load
-            />
-          </div>
-        </CardHeader>
-        <CardContent className="p-6 flex-grow">
-          <h2 className="text-2xl font-bold mb-2">{repo.name}</h2>
-          <p className="mb-4" style={{ color: customTheme.textColor }}>{repo.description}</p>
-          <div className="flex flex-wrap gap-2">
-            {repo.languages.map(lang => (
-              <span key={lang} className="text-xs px-2 py-1 rounded" style={{
-                backgroundColor: customTheme.accentColor,
-                color: customTheme.cardColor,
-              }}>
-                {lang}
-              </span>
-            ))}
-          </div>
-        </CardContent>
-        <CardFooter className="p-6 pt-0 flex justify-end gap-2">
-          <Button variant={customTheme.buttonStyle} size="icon" asChild style={{
-            backgroundColor: customTheme.buttonStyle === 'default' ? customTheme.accentColor : 'transparent',
-            color: customTheme.buttonStyle === 'default' ? customTheme.cardColor : customTheme.accentColor,
-            borderColor: customTheme.accentColor,
-          }}>
-            <Link href={repo.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="View GitHub repository">
-              <Github className="w-5 h-5" />
-            </Link>
-          </Button>
-          {repo.websiteUrl && (
-            <Button variant={customTheme.buttonStyle} size="icon" asChild style={{
-              backgroundColor: customTheme.buttonStyle === 'default' ? customTheme.accentColor : 'transparent',
-              color: customTheme.buttonStyle === 'default' ? customTheme.cardColor : customTheme.accentColor,
-              borderColor: customTheme.accentColor,
-            }}>
-              <Link href={repo.websiteUrl} target="_blank" rel="noopener noreferrer" aria-label="Visit project website">
-                <Globe className="w-5 h-5" />
-              </Link>
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
-    );
+  const handleSave = () => {
+    // In a real application, you would save the customTheme to a backend or local storage here
+    console.log('Saving theme:', customTheme)
+    console.log('Saving social links:', { linkedinUrl, twitterUrl, emailAddress, personalDomain })
+    alert('Theme and social links saved successfully!')
   }
 
   return (
@@ -301,9 +174,9 @@ export default function DashboardPage() {
                 <SelectValue placeholder="Select a preset theme" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(presetThemes).map(([key, theme]) => (
-                  <SelectItem key={key} value={key}>
-                    {theme.name}
+                {Object.keys(presetThemes).map((theme) => (
+                  <SelectItem key={theme} value={theme}>
+                    {presetThemes[theme].name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -445,38 +318,6 @@ export default function DashboardPage() {
               />
             </div>
           </div>
-          <div className="border-t pt-4">
-            <h3 className="text-lg font-semibold mb-2">Profile Information</h3>
-            <div className="space-y-2">
-              <div>
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your Name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="A short bio about yourself"
-                />
-              </div>
-              <div>
-                <Label htmlFor="avatar-url">Avatar URL</Label>
-                <Input
-                  id="avatar-url"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="https://example.com/your-avatar.jpg"
-                />
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -497,48 +338,59 @@ export default function DashboardPage() {
           color: customTheme.textColor,
           fontFamily: customTheme.fontFamily,
         }}>
-          {/* Header Preview */}
-          <div className="mb-8 text-center">
-            {avatarUrl && (
-              <Image
-                src={avatarUrl}
-                alt={name}
-                width={100}
-                height={100}
-                className="rounded-full mx-auto mb-4"
-              />
-            )}
-            <h1 className="text-3xl font-bold mb-2">{name}</h1>
-            <p className="text-lg mb-4">{bio}</p>
-            <div className="flex justify-center space-x-4">
-              {linkedinUrl && (
-                <Button variant={customTheme.buttonStyle} size="icon" asChild>
-                  <Link href={linkedinUrl} target="_blank" rel="noopener noreferrer">
-                    <Linkedin className="w-5 h-5" />
-                  </Link>
-                </Button>
-              )}
-              {twitterUrl && (
-                <Button variant={customTheme.buttonStyle} size="icon" asChild>
-                  <Link href={twitterUrl} target="_blank" rel="noopener noreferrer">
-                    <Twitter className="w-5 h-5" />
-                  </Link>
-                </Button>
-              )}
-              {emailAddress && (
-                <Button variant={customTheme.buttonStyle} size="icon" asChild>
-                  <Link href={`mailto:${emailAddress}`}>
-                    <Mail className="w-5 h-5" />
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Projects Preview */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
             {projects.map(project => (
-              <RepositoryCard key={project.id} repo={project} />
+              <Card key={project.id} className="overflow-hidden flex flex-col" style={{
+                backgroundColor: customTheme.cardColor,
+                color: customTheme.textColor,
+                borderColor: customTheme.accentColor,
+                ...cardStyles[customTheme.cardStyle],
+              }}>
+                <CardHeader className="p-0">
+                  <Image
+                    src={project.thumbnailUrl}
+                    alt={`${project.name} thumbnail`}
+                    width={600}
+                    height={300}
+                    className="w-full h-48 object-cover"
+                  />
+                </CardHeader>
+                <CardContent className="p-6 flex-grow">
+                  <h2 className="text-2xl font-bold mb-2">{project.name}</h2>
+                  <p className="mb-4" style={{ color: customTheme.textColor }}>{project.description}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {project.languages.map(lang => (
+                      <span key={lang} className="text-xs px-2 py-1 rounded" style={{
+                        backgroundColor: customTheme.accentColor,
+                        color: customTheme.cardColor,
+                      }}>
+                        {lang}
+                      </span>
+                    ))}
+                  </div>
+                
+                </CardContent>
+                <CardFooter className="p-6 pt-0 flex justify-end gap-2">
+                  <Button variant={customTheme.buttonStyle} size="icon" asChild style={{
+                    backgroundColor: customTheme.buttonStyle === 'default' ? customTheme.accentColor : 'transparent',
+                    color: customTheme.buttonStyle === 'default' ? customTheme.cardColor : customTheme.accentColor,
+                    borderColor: customTheme.accentColor,
+                  }}>
+                    <Link href={project.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="View GitHub repository">
+                      <Github className="w-5 h-5" />
+                    </Link>
+                  </Button>
+                  <Button variant={customTheme.buttonStyle} size="icon" asChild style={{
+                    backgroundColor: customTheme.buttonStyle === 'default' ? customTheme.accentColor : 'transparent',
+                    color: customTheme.buttonStyle === 'default' ? customTheme.cardColor : customTheme.accentColor,
+                    borderColor: customTheme.accentColor,
+                  }}>
+                    <Link href={project.websiteUrl} target="_blank" rel="noopener noreferrer" aria-label="Visit project website">
+                      <Globe className="w-5 h-5" />
+                    </Link>
+                  </Button>
+                </CardFooter>
+              </Card>
             ))}
           </div>
           {/* Social Links and Personal Domain */}
@@ -587,5 +439,5 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

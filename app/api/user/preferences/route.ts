@@ -21,7 +21,15 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ theme: user.theme, username: user.username });
+    return NextResponse.json({ 
+      theme: user.theme, 
+      username: user.username,
+      socialLinks: user.socialLinks,
+      personalDomain: user.personalDomain,
+      name: user.name,
+      bio: user.bio,
+      avatar: user.avatar,
+    });
   } catch (error) {
     console.error('Error fetching user preferences:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -38,12 +46,19 @@ export async function POST(req: Request) {
     }
 
     const session = JSON.parse(sessionCookie.value);
-    const { theme } = await req.json();
+    const { theme, socialLinks, personalDomain, name, bio, avatar } = await req.json();
 
     await connectDB();
     const user = await User.findOneAndUpdate(
       { username: session.username },
-      { theme },
+      { 
+        theme,
+        socialLinks,
+        personalDomain,
+        name,
+        bio,
+        avatar,
+      },
       { new: true }
     );
 
@@ -51,7 +66,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, theme: user.theme });
+    return NextResponse.json({ 
+      success: true, 
+      theme: user.theme, 
+      socialLinks: user.socialLinks, 
+      personalDomain: user.personalDomain,
+      name: user.name,
+      bio: user.bio,
+      avatar: user.avatar,
+    });
   } catch (error) {
     console.error('Error updating user preferences:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -64,14 +64,14 @@ export async function GET(request: Request) {
         bio: profileData.bio,
         avatar: profileData.avatar,
         isVerified: true,
-        githubAccessToken: accessToken,
+        githubAccessToken: accessToken,  // Saving the access token
       });
     } else {
       user.name = profileData.name;
       user.bio = profileData.bio;
       user.avatar = profileData.avatar;
       user.isVerified = true;
-      user.githubAccessToken = accessToken;
+      user.githubAccessToken = accessToken;  // Updating the access token
     }
     await user.save();
 
@@ -89,7 +89,8 @@ export async function GET(request: Request) {
       maxAge: 60 * 60 * 24 * 7, // 1 week
     });
 
-    return NextResponse.redirect(new URL(`/${userData.login}`, request.url));
+    // Redirect to the dashboard
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   } catch (error) {
     console.error("GitHub OAuth error:", error);
     return NextResponse.redirect(new URL("/login?error=server_error", request.url));

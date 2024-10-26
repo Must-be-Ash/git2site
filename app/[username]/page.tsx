@@ -6,6 +6,7 @@ import { PortfolioHeader } from '@/components/portfolio/header';
 import { RepositoryGrid } from '@/components/portfolio/repository-grid';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { themes } from '@/lib/themes';
+import { StyledThemeProvider } from '@/components/StyledThemeProvider';
 
 export async function generateMetadata({ params }: { params: { username: string } }) {
   return {
@@ -33,7 +34,16 @@ export default async function PortfolioPage({ params }: { params: { username: st
     const user = await User.findOne({ username });
     
     if (!user) {
-      notFound();
+      console.log(`User not found: ${username}`);
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4">Portfolio Not Found</h1>
+            <p className="mb-8">The requested portfolio doesn&apos;t exist or is still being generated.</p>
+            <a href="/" className="text-primary hover:underline">Return to Home</a>
+          </div>
+        </div>
+      );
     }
 
     const repositories = await Repository.find({ userId: user._id })
@@ -50,12 +60,14 @@ export default async function PortfolioPage({ params }: { params: { username: st
         forcedTheme={serializedUser.theme?.id || 'base'}
         themes={Object.keys(themes)}
       >
-        <main className="min-h-screen bg-background text-foreground">
-          <PortfolioHeader user={serializedUser} />
-          <div className="container px-4 py-8">
-            <RepositoryGrid repositories={serializedRepositories} />
-          </div>
-        </main>
+        <StyledThemeProvider theme={serializedUser.theme}>
+          <main className="min-h-screen bg-background text-foreground">
+            <PortfolioHeader user={serializedUser} />
+            <div className="container px-4 py-8">
+              <RepositoryGrid repositories={serializedRepositories} />
+            </div>
+          </main>
+        </StyledThemeProvider>
       </ThemeProvider>
     );
   } catch (error) {

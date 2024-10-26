@@ -14,15 +14,21 @@ const userSchema = new mongoose.Schema({
     default: false,
   },
   theme: {
-    id: String,
-    colors: {
-      background: String,
-      foreground: String,
-      primary: String,
-      secondary: String,
-      accent: String,
-    },
+    name: String,
+    buttonStyle: String,
+    accentColor: String,
+    backgroundColor: String,
+    textColor: String,
+    fontFamily: String,
+    cardStyle: String,
+    cardColor: String,
   },
+  socialLinks: {
+    linkedinUrl: String,
+    twitterUrl: String,
+    emailAddress: String,
+  },
+  personalDomain: String,
   githubAccessToken: String,
 }, { timestamps: true });
 
