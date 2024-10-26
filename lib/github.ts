@@ -100,7 +100,7 @@ const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID!;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET!;
 
 export async function getGithubUser(code: string) {
-  // Exchange code for access token
+  console.log("Exchanging code for access token");
   const tokenResponse = await axios.post(
     'https://github.com/login/oauth/access_token',
     {
@@ -111,14 +111,25 @@ export async function getGithubUser(code: string) {
     {
       headers: { Accept: 'application/json' },
     }
-  );
-
-  const accessToken = tokenResponse.data.access_token;
-
-  // Use access token to get user data
-  const userResponse = await axios.get('https://api.github.com/user', {
-    headers: { Authorization: `Bearer ${accessToken}` },
+  ).catch(error => {
+    console.error("Error exchanging code for access token:", error.response?.data || error.message);
+    throw new Error("Failed to exchange code for access token");
   });
 
+  const accessToken = tokenResponse.data.access_token;
+  if (!accessToken) {
+    console.error("No access token received from GitHub");
+    throw new Error("No access token received from GitHub");
+  }
+
+  console.log("Access token received, fetching user data");
+  const userResponse = await axios.get('https://api.github.com/user', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }).catch(error => {
+    console.error("Error fetching user data from GitHub:", error.response?.data || error.message);
+    throw new Error("Failed to fetch user data from GitHub");
+  });
+
+  console.log("User data fetched successfully");
   return userResponse.data;
 }
