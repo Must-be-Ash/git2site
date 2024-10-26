@@ -1,78 +1,58 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { connectDB } from "@/lib/db";
 import { User } from "@/lib/models/user";
 import { SignJWT } from "jose";
+import { getGithubUser } from "@/lib/github";
 
-export async function GET(request: Request) {
+const JWT_SECRET = process.env.JWT_SECRET!;
+
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
 
   if (!code) {
-    return NextResponse.redirect(new URL("/login?error=missing_code", request.url));
+    return NextResponse.json({ error: "No code provided" }, { status: 400 });
   }
 
   try {
-    const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        client_id: process.env.GITHUB_CLIENT_ID,
-        client_secret: process.env.GITHUB_CLIENT_SECRET,
-        code,
-      }),
-    });
+    // Get GitHub user data
+    const githubUser = await getGithubUser(code);
 
-    const tokenData = await tokenResponse.json();
-    if (tokenData.error) {
-      return NextResponse.redirect(new URL(`/login?error=${tokenData.error}`, request.url));
-    }
-
-    const accessToken = tokenData.access_token;
-
-    const userResponse = await fetch("https://api.github.com/user", {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-
-    if (!userResponse.ok) {
-      return NextResponse.redirect(new URL(`/login?error=github_api_error`, request.url));
-    }
-
-    const userData = await userResponse.json();
-
+    // Connect to the database
     await connectDB();
 
-    const user = await User.findOneAndUpdate(
-      { githubId: userData.id },
-      {
-        username: userData.login,
-        name: userData.name,
-        avatar: userData.avatar_url,
-        githubAccessToken: accessToken,
-      },
-      { upsert: true, new: true }
-    );
+    // Find or create user
+    let user = await User.findOne({ githubId: githubUser.id });
+    if (!user) {
+      user = await User.create({
+        githubId: githubUser.id,
+        username: githubUser.login,
+        name: githubUser.name,
+        email: githubUser.email,
+        avatar: githubUser.avatar_url,
+      });
+    }
 
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const token = await new SignJWT({ userId: user._id.toString() })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime('7d')
-      .sign(secret);
+    // Create JWT token
+    const token = await new SignJWT({ userId: user._id })
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime("1d")
+      .sign(new TextEncoder().encode(JWT_SECRET));
 
-    cookies().set("session", token, {
+    // Set cookie
+    cookies().set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 1 week
+      sameSite: "strict",
+      maxAge: 86400, // 1 day
+      path: "/",
     });
 
+    // Redirect to dashboard
     return NextResponse.redirect(new URL("/dashboard", request.url));
   } catch (error) {
-    console.error("GitHub OAuth error:", error);
-    return NextResponse.redirect(new URL(`/login?error=server_error`, request.url));
+    console.error("Error in GitHub callback:", error);
+    return NextResponse.json({ error: "Authentication failed" }, { status: 500 });
   }
 }

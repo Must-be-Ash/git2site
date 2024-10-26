@@ -1,6 +1,7 @@
 import { Octokit } from '@octokit/rest';
 import { throttling } from '@octokit/plugin-throttling';
 import { restEndpointMethods } from '@octokit/plugin-rest-endpoint-methods';
+import axios from 'axios';
 
 const ThrottledOctokit = Octokit.plugin(throttling, restEndpointMethods);
 
@@ -93,4 +94,31 @@ export async function fetchUserProfile(username: string, accessToken: string): P
     console.error('Error fetching user profile:', error);
     throw new Error('Failed to fetch user profile from GitHub');
   }
+}
+
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID!;
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET!;
+
+export async function getGithubUser(code: string) {
+  // Exchange code for access token
+  const tokenResponse = await axios.post(
+    'https://github.com/login/oauth/access_token',
+    {
+      client_id: GITHUB_CLIENT_ID,
+      client_secret: GITHUB_CLIENT_SECRET,
+      code,
+    },
+    {
+      headers: { Accept: 'application/json' },
+    }
+  );
+
+  const accessToken = tokenResponse.data.access_token;
+
+  // Use access token to get user data
+  const userResponse = await axios.get('https://api.github.com/user', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  return userResponse.data;
 }
