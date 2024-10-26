@@ -11,11 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Github, Globe, Save, Linkedin, Twitter, Mail, Share2, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
-import { generateThumbnail } from '@/lib/thumbnailService';
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { useUser } from '@/lib/hooks/useUser'; // Add this import
-import { useRouter } from 'next/navigation';
+import { useUser } from '@/lib/hooks/useUser';
 
 interface Project {
   id: string;
@@ -217,7 +215,7 @@ const cardStyles = {
 const solidDropdownStyle = "bg-background bg-white border border-input z-20";
 
 export default function DashboardPage() {
-  const { user, loading } = useUser(); // Add this line to get user information
+  const { user, loading } = useUser();
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentTheme, setCurrentTheme] = useState<Theme>(presetThemes.default);
   const [customTheme, setCustomTheme] = useState<Theme>(presetThemes.default);
@@ -234,8 +232,6 @@ export default function DashboardPage() {
   const [languageTagColor, setLanguageTagColor] = useState(customTheme.colors.tag || '#e0e0e0');
   const [generatingPortfolio, setGeneratingPortfolio] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     console.log("Dashboard component mounted");
@@ -245,60 +241,37 @@ export default function DashboardPage() {
     }
   }, [user]);
 
-  useEffect(() => {
-    const completeSignup = async () => {
-      try {
-        console.log("Completing signup");
-        const response = await fetch('/api/auth/complete-signup', { 
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        if (!response.ok) {
-          throw new Error('Failed to complete signup');
-        }
-        console.log("Signup completed, fetching user data");
-        await fetchUserData();
-      } catch (error) {
-        console.error('Error completing signup:', error);
-        toast.error('An error occurred. Please try logging in again.');
-        router.push('/login');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    completeSignup();
-  }, []);
-
   const fetchUserData = async () => {
     console.log("Fetching user data");
     try {
-      const response = await fetch('/api/user');
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized. Please log in again.');
-        }
-        throw new Error('Failed to fetch user data');
-      }
-      const userData = await response.json();
-      console.log("User data fetched successfully");
-      // Update state with user data
-      setName(userData.name || '');
-      setUsername(userData.username || '');
-      // ... (update other state variables)
-
-      // Fetch user preferences
-      const preferencesResponse = await fetch('/api/user/preferences');
-      if (preferencesResponse.ok) {
-        const preferencesData = await preferencesResponse.json();
+      const response = await fetch('/api/user/preferences');
+      if (response.ok) {
+        const data = await response.json();
         console.log("User preferences fetched successfully");
-        // Update state with preferences data
-        // ... (update theme, social links, etc.)
+        setCustomTheme({
+          ...data.theme,
+          backgroundColor: data.theme.colors.background,
+          textColor: data.theme.colors.foreground,
+          cardColor: data.theme.colors.card,
+        });
+        setCurrentTheme(data.theme);
+        setLinkedinUrl(data.socialLinks?.linkedinUrl || '');
+        setTwitterUrl(data.socialLinks?.twitterUrl || '');
+        setEmailAddress(data.socialLinks?.emailAddress || '');
+        setPersonalDomain(data.personalDomain || '');
+        setName(data.name || '');
+        setBio(data.bio || '');
+        setAvatarUrl(data.avatar || '');
+        setUsername(data.username || '');
+        setButtonIconColor(data.theme?.colors['button-foreground'] || customTheme.colors['button-foreground']);
+        setAccentTextColor(data.theme?.colors.primary || customTheme.colors.primary);
+        setLanguageTagColor(data.theme?.colors.tag || customTheme.colors.tag);
       } else {
         console.error("Failed to fetch user preferences");
+        toast.error('Failed to fetch user preferences');
       }
 
-      // Fetch user projects
+      console.log("Fetching user projects");
       const projectsResponse = await fetch('/api/user/projects');
       if (projectsResponse.ok) {
         const projectsData = await projectsResponse.json();
@@ -306,11 +279,11 @@ export default function DashboardPage() {
         setProjects(projectsData);
       } else {
         console.error("Failed to fetch user projects");
+        toast.error('Failed to fetch user projects');
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
-      toast.error('An error occurred while fetching user data. Please try logging in again.');
-      router.push('/login');
+      toast.error('An error occurred while fetching user data');
     }
   };
 
@@ -387,46 +360,22 @@ export default function DashboardPage() {
 
   const handleSave = async () => {
     try {
-      const preferencesToSave = {
-        theme: {
-          name: customTheme.name,
-          colors: {
-            background: customTheme.backgroundColor,
-            foreground: customTheme.textColor,
-            card: customTheme.cardColor,
-            'card-foreground': customTheme.textColor,
-            primary: accentTextColor,
-            secondary: accentTextColor,
-            button: customTheme.colors.button,
-            'button-foreground': buttonIconColor,
-            tag: languageTagColor,
-            'tag-foreground': accentTextColor, // Using accentTextColor for tag text
-          },
-          font: customTheme.fontFamily,
-          buttonStyle: customTheme.buttonStyle,
-          cardStyle: customTheme.cardStyle,
-        },
-        socialLinks: { linkedinUrl, twitterUrl, emailAddress },
-        personalDomain,
-        name,
-        bio,
-        avatar: avatarUrl,
-      };
-
-      console.log('Saving preferences:', preferencesToSave);
-
       const response = await fetch('/api/user/preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(preferencesToSave),
+        body: JSON.stringify({
+          theme: customTheme,
+          socialLinks: { linkedinUrl, twitterUrl, emailAddress },
+          personalDomain,
+          name,
+          bio,
+          avatar: avatarUrl,
+        }),
       });
 
       if (response.ok) {
-        const data = await response.json();
-        console.log('Preferences saved successfully:', data);
         toast.success('Preferences saved successfully!');
       } else {
-        console.error('Failed to save preferences:', await response.text());
         toast.error('Failed to save preferences');
       }
     } catch (error) {
@@ -455,6 +404,8 @@ export default function DashboardPage() {
     }
 
     setGeneratingPortfolio(true);
+    setGenerationProgress(0);
+
     try {
       const response = await fetch('/api/portfolio/generate', {
         method: 'POST',
@@ -466,14 +417,44 @@ export default function DashboardPage() {
         throw new Error('Failed to generate portfolio');
       }
 
-      toast.success('Portfolio generated successfully!');
-      // Optionally, fetch updated user data here
+      const data = await response.json();
+      setGenerationProgress(data.progress);
+
+      if (data.status === 'completed') {
+        toast.success('Portfolio generation completed');
+        fetchUserData();
+      } else {
+        // If the generation is not complete, poll for updates
+        pollGenerationStatus(data.jobId);
+      }
     } catch (error) {
       console.error('Error generating portfolio:', error);
       toast.error('An error occurred while generating the portfolio');
     } finally {
       setGeneratingPortfolio(false);
     }
+  };
+
+  const pollGenerationStatus = async (jobId: string) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/portfolio/status?jobId=${jobId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch generation status');
+        }
+        const data = await response.json();
+        setGenerationProgress(data.progress);
+
+        if (data.status === 'completed') {
+          clearInterval(pollInterval);
+          toast.success('Portfolio generation completed');
+          fetchUserData();
+        }
+      } catch (error) {
+        console.error('Error polling generation status:', error);
+        clearInterval(pollInterval);
+      }
+    }, 5000); // Poll every 5 seconds
   };
 
   function RepositoryCard({ repo }: { repo: Project }) {
@@ -540,10 +521,6 @@ export default function DashboardPage() {
         </CardFooter>
       </Card>
     );
-  }
-
-  if (isLoading) {
-    return <div>Loading...</div>;
   }
 
   return (
@@ -787,7 +764,17 @@ export default function DashboardPage() {
               Share
             </Button>
             <Button onClick={generatePortfolio} disabled={generatingPortfolio || !user}>
-              {generatingPortfolio ? 'Generating...' : 'Generate Portfolio'}
+              {generatingPortfolio ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating... ({generationProgress})
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Generate Portfolio
+                </>
+              )}
             </Button>
           </div>
         </header>
