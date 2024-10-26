@@ -3,14 +3,14 @@ import { cookies } from "next/headers";
 import { connectDB } from "@/lib/db";
 import { User } from "@/lib/models/user";
 import { octokit } from "@/lib/github";
+import { fetchUserProfile, fetchUserRepositories } from "@/lib/github";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const state = searchParams.get("state"); // This will be the username
 
-  if (!code || !state) {
-    return NextResponse.redirect("/login?error=missing_code_or_state");
+  if (!code) {
+    return NextResponse.redirect("/login?error=missing_code");
   }
 
   try {
@@ -41,15 +41,33 @@ export async function GET(request: Request) {
 
     const userData = await userResponse.json();
 
-    // Verify and update user
+    // Generate or update portfolio
     await connectDB();
-    const user = await User.findOne({ username: state });
-    if (user && user.username === userData.login) {
-      user.isVerified = true;
-      await user.save();
+    let user = await User.findOne({ username: userData.login });
+    
+    const [profileData, repositories] = await Promise.all([
+      fetchUserProfile(userData.login),
+      fetchUserRepositories(userData.login),
+    ]);
+
+    if (!user) {
+      user = new User({
+        username: userData.login,
+        name: profileData.name,
+        bio: profileData.bio,
+        avatar: profileData.avatar,
+        isVerified: true,
+      });
     } else {
-      return NextResponse.redirect(`/${state}?error=verification_failed`);
+      user.name = profileData.name;
+      user.bio = profileData.bio;
+      user.avatar = profileData.avatar;
+      user.isVerified = true;
     }
+    await user.save();
+
+    // Update repositories
+    // (You'll need to create a Repository model and implement this part)
 
     // Set session cookie
     const cookieStore = await cookies();
@@ -68,7 +86,7 @@ export async function GET(request: Request) {
       maxAge: 60 * 60 * 24 * 7, // 1 week
     });
 
-    return NextResponse.redirect(`/${state}?verified=true`);
+    return NextResponse.redirect(`/${userData.login}`);
   } catch (error) {
     console.error("GitHub OAuth error:", error);
     return NextResponse.redirect("/login?error=server_error");

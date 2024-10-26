@@ -5,8 +5,6 @@ import { Repository } from '@/lib/models/repository';
 import { PortfolioHeader } from '@/components/portfolio/header';
 import { RepositoryGrid } from '@/components/portfolio/repository-grid';
 import { ThemeProvider } from '@/components/providers/theme-provider';
-import { VerificationPrompt } from '@/components/verification-prompt';
-import { RefreshButton } from '@/components/refresh-button';
 
 export async function generateMetadata({ params }: { params: { username: string } }) {
   return {
@@ -15,72 +13,37 @@ export async function generateMetadata({ params }: { params: { username: string 
   };
 }
 
-type Props = {
-  params: { username: string };
-  searchParams: { [key: string]: string | string[] | undefined };
-};
-
-// Helper function to serialize Mongoose documents
-function serializeDocument(doc: any) {
-  const serialized = JSON.parse(JSON.stringify(doc));
-  if (serialized._id) {
-    serialized.id = serialized._id.toString();
-    delete serialized._id;
-  }
-  return serialized;
-}
-
-export default async function PortfolioPage(props: Props) {
-  const { username } = props.params;
-  const { verified } = props.searchParams;
+export default async function PortfolioPage({ params }: { params: { username: string } }) {
+  const { username } = params;
   
   try {
-    console.log('Connecting to database...');
     await connectDB();
-    console.log('Connected to database');
     
-    console.log(`Fetching user data for username: ${username}`);
     const user = await User.findOne({ username });
     
     if (!user) {
-      console.log(`User not found for username: ${username}`);
       notFound();
     }
 
-    console.log(`Fetching repositories for user: ${user._id}`);
     const repositories = await Repository.find({ userId: user._id })
       .sort({ isFeatured: -1, stars: -1 });
-
-    console.log(`Found ${repositories.length} repositories`);
-
-    // Serialize the user and repositories
-    const serializedUser = serializeDocument(user);
-    const serializedRepositories = repositories.map(serializeDocument);
-
-    // Check if the user was just verified
-    if (verified === 'true') {
-      serializedUser.isVerified = true;
-      await User.findByIdAndUpdate(user._id, { isVerified: true });
-    }
 
     return (
       <ThemeProvider
         attribute="class"
-        defaultTheme={serializedUser.theme?.id || 'light'}
-        forcedTheme={serializedUser.theme?.id || 'light'}
+        defaultTheme={user.theme?.id || 'light'}
+        forcedTheme={user.theme?.id || 'light'}
       >
         <main className="min-h-screen bg-background">
-          <PortfolioHeader user={serializedUser} />
-          {!serializedUser.isVerified && <VerificationPrompt username={username} />}
+          <PortfolioHeader user={user} />
           <div className="container px-4 py-8">
-            <RefreshButton username={username} />
-            <RepositoryGrid repositories={serializedRepositories} />
+            <RepositoryGrid repositories={repositories} />
           </div>
         </main>
       </ThemeProvider>
     );
   } catch (error) {
     console.error('Error in PortfolioPage:', error);
-    return <div>An error occurred while loading the portfolio. Please try again later. Error: {(error as Error).message}</div>;
+    return <div>An error occurred while loading the portfolio. Please try again later.</div>;
   }
 }
