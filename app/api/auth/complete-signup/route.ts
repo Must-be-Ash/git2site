@@ -4,13 +4,13 @@ import { connectDB } from "@/lib/db";
 import { User, IUser } from "@/lib/models/user";
 import { SignJWT, jwtVerify } from "jose";
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   console.log("Complete signup process started");
   try {
     const tempToken = cookies().get("temp_session")?.value;
     if (!tempToken) {
       console.error("No temporary session found");
-      return NextResponse.json({ error: "No temporary session found" }, { status: 401 });
+      return NextResponse.redirect(new URL("/login?error=no_temp_session", request.url));
     }
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
@@ -28,16 +28,16 @@ export async function POST(request: Request) {
           githubAccessToken: payload.accessToken,
         },
       },
-      { upsert: true, new: true, lean: true, maxTimeMS: 5000 }
+      { upsert: true, new: true, lean: true }
     ) as (IUser & { _id: string }) | null;
 
     if (!user) {
       console.error("Failed to create or update user");
-      return NextResponse.json({ error: "Failed to create or update user" }, { status: 500 });
+      return NextResponse.redirect(new URL("/login?error=user_creation_failed", request.url));
     }
 
     console.log("Generating new JWT");
-    const newToken = await new SignJWT({ userId: user._id, username: user.username })
+    const newToken = await new SignJWT({ userId: user._id.toString(), username: user.username })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('7d')
@@ -54,9 +54,9 @@ export async function POST(request: Request) {
     cookies().delete("temp_session");
 
     console.log("Complete signup process finished successfully");
-    return NextResponse.json({ success: true });
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   } catch (error) {
     console.error("Error completing signup:", error);
-    return NextResponse.json({ error: "Failed to complete signup" }, { status: 500 });
+    return NextResponse.redirect(new URL("/login?error=complete_signup_failed", request.url));
   }
 }
