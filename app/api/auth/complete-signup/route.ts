@@ -28,7 +28,7 @@ export async function POST(request: Request) {
           githubAccessToken: payload.accessToken,
         },
       },
-      { upsert: true, new: true, lean: true }
+      { upsert: true, new: true, lean: true, maxTimeMS: 5000 }
     ) as (IUser & { _id: string }) | null;
 
     if (!user) {

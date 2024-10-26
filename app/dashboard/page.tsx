@@ -275,6 +275,9 @@ export default function DashboardPage() {
     try {
       const response = await fetch('/api/user');
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Unauthorized. Please log in again.');
+        }
         throw new Error('Failed to fetch user data');
       }
       const userData = await response.json();
@@ -306,7 +309,8 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
-      toast.error('An error occurred while fetching user data');
+      toast.error('An error occurred while fetching user data. Please try logging in again.');
+      router.push('/login');
     }
   };
 

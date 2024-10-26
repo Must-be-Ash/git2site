@@ -35,6 +35,9 @@ export async function GET() {
     return NextResponse.json(user);
   } catch (error) {
     console.error("Error fetching user:", error);
+    if (error instanceof Error && error.name === 'JWTExpired') {
+      return NextResponse.json({ error: "Session expired. Please log in again." }, { status: 401 });
+    }
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
