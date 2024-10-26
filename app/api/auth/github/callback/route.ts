@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     const accessToken = tokenData.access_token;
     console.log("Access token obtained");
 
-    console.log("Fetching user data from GitHub");
+    console.log("Fetching basic user data from GitHub");
     const userResponse = await fetch("https://api.github.com/user", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     }
 
     const userData = await userResponse.json();
-    console.log("User data fetched successfully");
+    console.log("Basic user data fetched successfully");
 
     console.log("Connecting to database");
     await connectDB();
@@ -65,9 +65,7 @@ export async function GET(request: Request) {
       {
         $set: {
           name: userData.name,
-          bio: userData.bio,
           avatar: userData.avatar_url,
-          isVerified: true,
           githubAccessToken: accessToken,
         },
       },
@@ -90,13 +88,6 @@ export async function GET(request: Request) {
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 1 week
     });
-
-    // Trigger background task for fetching additional user data
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/user/update-profile`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user._id.toString() }),
-    }).catch(console.error);
 
     console.log("Redirecting to dashboard");
     return NextResponse.redirect(new URL("/dashboard", request.url));

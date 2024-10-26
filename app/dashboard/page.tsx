@@ -424,51 +424,30 @@ export default function DashboardPage() {
 
   const generatePortfolio = async () => {
     if (!user) {
-      console.error("User not found. Cannot generate portfolio.");
       toast.error('User not found. Please log in again.');
       return;
     }
 
-    console.log("Starting portfolio generation");
     setGeneratingPortfolio(true);
-    setGenerationProgress(0);
-    let step = 0;
-    let hasMore = true;
+    try {
+      const response = await fetch('/api/portfolio/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
 
-    while (hasMore) {
-      try {
-        console.log(`Generating portfolio step ${step}`);
-        const response = await fetch('/api/portfolio/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id, step }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to generate portfolio');
-        }
-
-        const data = await response.json();
-        console.log(`Step ${step} completed. Processed ${data.processedRepos.length} repos`);
-        setGenerationProgress((prev) => prev + data.processedRepos.length);
-        
-        if (data.nextStep === null) {
-          console.log("Portfolio generation completed");
-          hasMore = false;
-        } else {
-          step = data.nextStep;
-        }
-      } catch (error) {
-        console.error('Error generating portfolio:', error);
-        toast.error('An error occurred while generating the portfolio');
-        break;
+      if (!response.ok) {
+        throw new Error('Failed to generate portfolio');
       }
-    }
 
-    setGeneratingPortfolio(false);
-    toast.success('Portfolio generation completed');
-    console.log("Refreshing user data after portfolio generation");
-    fetchUserData();
+      toast.success('Portfolio generated successfully!');
+      // Optionally, fetch updated user data here
+    } catch (error) {
+      console.error('Error generating portfolio:', error);
+      toast.error('An error occurred while generating the portfolio');
+    } finally {
+      setGeneratingPortfolio(false);
+    }
   };
 
   function RepositoryCard({ repo }: { repo: Project }) {
@@ -778,17 +757,7 @@ export default function DashboardPage() {
               Share
             </Button>
             <Button onClick={generatePortfolio} disabled={generatingPortfolio || !user}>
-              {generatingPortfolio ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating... ({generationProgress})
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Generate Portfolio
-                </>
-              )}
+              {generatingPortfolio ? 'Generating...' : 'Generate Portfolio'}
             </Button>
           </div>
         </header>
