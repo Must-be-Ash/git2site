@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Github, Globe, Save, Linkedin, Twitter, Mail } from 'lucide-react';
+import { Github, Globe, Save, Linkedin, Twitter, Mail, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generateThumbnail } from '@/lib/thumbnailService';
@@ -134,6 +134,7 @@ export default function DashboardPage() {
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [username, setUsername] = useState('');
 
   useEffect(() => {
     fetchUserData();
@@ -153,6 +154,7 @@ export default function DashboardPage() {
         setName(data.name || '');
         setBio(data.bio || '');
         setAvatarUrl(data.avatar || '');
+        setUsername(data.username || '');
       } else {
         toast.error('Failed to fetch user preferences');
       }
@@ -219,6 +221,19 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error saving preferences:', error);
       toast.error('An error occurred while saving preferences');
+    }
+  };
+
+  const handleShare = () => {
+    if (username) {
+      const portfolioUrl = `${window.location.origin}/${username}`;
+      navigator.clipboard.writeText(portfolioUrl).then(() => {
+        toast.success('Portfolio URL copied to clipboard!');
+      }, () => {
+        toast.error('Failed to copy URL. Please try again.');
+      });
+    } else {
+      toast.error('Username not found. Please try again later.');
     }
   };
 
@@ -485,10 +500,16 @@ export default function DashboardPage() {
         {/* Header */}
         <header className="bg-muted p-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">Portfolio Builder</h1>
-          <Button onClick={handleSave}>
-            <Save className="w-4 h-4 mr-2" />
-            Save Theme
-          </Button>
+          <div className="space-x-2">
+            <Button onClick={handleSave}>
+              <Save className="w-4 h-4 mr-2" />
+              Save Theme
+            </Button>
+            <Button onClick={handleShare}>
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </Button>
+          </div>
         </header>
 
         {/* Preview */}

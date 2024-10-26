@@ -1,25 +1,28 @@
 'use client';
 
-import { themes } from '@/lib/themes';
+import { themes, Theme } from '@/lib/themes';
 
 interface StyledThemeProviderProps {
-  theme: any;
+  theme: Theme;
   children: React.ReactNode;
 }
 
 export function StyledThemeProvider({ theme, children }: StyledThemeProviderProps) {
+  const currentTheme = themes[theme] || themes.base;
+
   return (
     <>
       <style jsx global>{`
         :root {
-          --background: ${theme?.colors.background || themes.base.colors.background};
-          --foreground: ${theme?.colors.foreground || themes.base.colors.foreground};
-          --card: ${theme?.colors.card || themes.base.colors.card};
-          --card-foreground: ${theme?.colors['card-foreground'] || themes.base.colors['card-foreground']};
-          --primary: ${theme?.colors.primary || themes.base.colors.primary};
-          --secondary: ${theme?.colors.secondary || themes.base.colors.secondary};
-          --button: ${theme?.colors.button || themes.base.colors.button};
-          --button-foreground: ${theme?.colors['button-foreground'] || themes.base.colors['button-foreground']};
+          --background: ${currentTheme.colors.background};
+          --foreground: ${currentTheme.colors.foreground};
+          --card: ${currentTheme.colors.card};
+          --card-foreground: ${currentTheme.colors['card-foreground']};
+          --primary: ${currentTheme.colors.primary};
+          --secondary: ${currentTheme.colors.secondary};
+          --button: ${currentTheme.colors.button};
+          --button-foreground: ${currentTheme.colors['button-foreground']};
+          --font-sans: ${currentTheme.font};
         }
       `}</style>
       {children}

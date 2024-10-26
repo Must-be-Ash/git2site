@@ -2,11 +2,14 @@ import { notFound } from 'next/navigation';
 import { connectDB } from '@/lib/db';
 import { User } from '@/lib/models/user';
 import { Repository } from '@/lib/models/repository';
-import { PortfolioHeader } from '@/components/portfolio/header';
-import { RepositoryGrid } from '@/components/portfolio/repository-grid';
 import { ThemeProvider } from '@/components/providers/theme-provider';
-import { themes } from '@/lib/themes';
+import { themes, Theme } from '@/lib/themes';
 import { StyledThemeProvider } from '@/components/StyledThemeProvider';
+import Image from 'next/image';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
+import { Github, Globe, Linkedin, Twitter, Mail } from 'lucide-react';
 
 export async function generateMetadata({ params }: { params: { username: string } }) {
   return {
@@ -15,7 +18,6 @@ export async function generateMetadata({ params }: { params: { username: string 
   };
 }
 
-// Helper function to serialize Mongoose documents
 function serializeDocument(doc: any) {
   const serialized = JSON.parse(JSON.stringify(doc));
   if (serialized._id) {
@@ -34,37 +36,122 @@ export default async function PortfolioPage({ params }: { params: { username: st
     const user = await User.findOne({ username });
     
     if (!user) {
-      console.log(`User not found: ${username}`);
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4">Portfolio Not Found</h1>
-            <p className="mb-8">The requested portfolio doesn&apos;t exist or is still being generated.</p>
-            <a href="/" className="text-primary hover:underline">Return to Home</a>
-          </div>
-        </div>
-      );
+      notFound();
     }
 
     const repositories = await Repository.find({ userId: user._id })
       .sort({ isFeatured: -1, stars: -1 });
 
-    // Serialize the user and repositories
     const serializedUser = serializeDocument(user);
     const serializedRepositories = repositories.map(serializeDocument);
+
+    const userTheme = serializedUser.theme?.id || 'base';
 
     return (
       <ThemeProvider
         attribute="class"
-        defaultTheme={serializedUser.theme?.id || 'base'}
-        forcedTheme={serializedUser.theme?.id || 'base'}
+        defaultTheme={userTheme}
+        forcedTheme={userTheme}
         themes={Object.keys(themes)}
       >
-        <StyledThemeProvider theme={serializedUser.theme}>
+        <StyledThemeProvider theme={userTheme as Theme}>
           <main className="min-h-screen bg-background text-foreground">
-            <PortfolioHeader user={serializedUser} />
-            <div className="container px-4 py-8">
-              <RepositoryGrid repositories={serializedRepositories} />
+            <div className="container mx-auto px-4 py-8">
+              {/* Header */}
+              <div className="mb-8 text-center">
+                {serializedUser.avatar && (
+                  <Image
+                    src={serializedUser.avatar}
+                    alt={serializedUser.name}
+                    width={100}
+                    height={100}
+                    className="rounded-full mx-auto mb-4"
+                  />
+                )}
+                <h1 className="text-3xl font-bold mb-2">{serializedUser.name}</h1>
+                <p className="text-lg mb-4">{serializedUser.bio}</p>
+                <div className="flex justify-center space-x-4">
+                  {serializedUser.socialLinks?.linkedinUrl && (
+                    <Button variant="outline" size="icon" asChild>
+                      <Link href={serializedUser.socialLinks.linkedinUrl} target="_blank" rel="noopener noreferrer">
+                        <Linkedin className="w-5 h-5" />
+                      </Link>
+                    </Button>
+                  )}
+                  {serializedUser.socialLinks?.twitterUrl && (
+                    <Button variant="outline" size="icon" asChild>
+                      <Link href={serializedUser.socialLinks.twitterUrl} target="_blank" rel="noopener noreferrer">
+                        <Twitter className="w-5 h-5" />
+                      </Link>
+                    </Button>
+                  )}
+                  {serializedUser.socialLinks?.emailAddress && (
+                    <Button variant="outline" size="icon" asChild>
+                      <Link href={`mailto:${serializedUser.socialLinks.emailAddress}`}>
+                        <Mail className="w-5 h-5" />
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Projects */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                {serializedRepositories.map((repo) => (
+                  <Card key={repo.id} className="overflow-hidden flex flex-col">
+                    <CardHeader className="p-0">
+                      <div className="relative w-full h-48">
+                        <Image
+                          src={repo.thumbnailUrl || '/placeholder.png'}
+                          alt={`${repo.name} thumbnail`}
+                          layout="fill"
+                          objectFit="cover"
+                          className="transition-opacity hover:opacity-80"
+                        />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-6 flex-grow">
+                      <h2 className="text-2xl font-bold mb-2">{repo.name}</h2>
+                      <p className="mb-4">{repo.description}</p>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {repo.language && (
+                          <span className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground">
+                            {repo.language}
+                          </span>
+                        )}
+                        {repo.topics?.map((topic: string) => (
+                          <span key={topic} className="text-xs px-2 py-1 rounded bg-secondary text-secondary-foreground">
+                            {topic}
+                          </span>
+                        ))}
+                      </div>
+                    </CardContent>
+                    <CardFooter className="p-6 pt-0 flex justify-end gap-2">
+                      <Button variant="outline" size="icon" asChild>
+                        <Link href={repo.url} target="_blank" rel="noopener noreferrer" aria-label="View GitHub repository">
+                          <Github className="w-5 h-5" />
+                        </Link>
+                      </Button>
+                      {repo.homepage && (
+                        <Button variant="outline" size="icon" asChild>
+                          <Link href={repo.homepage} target="_blank" rel="noopener noreferrer" aria-label="Visit project website">
+                            <Globe className="w-5 h-5" />
+                          </Link>
+                        </Button>
+                      )}
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Personal Domain */}
+              {serializedUser.personalDomain && (
+                <div className="mt-8 text-center">
+                  <Link href={serializedUser.personalDomain} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                    {serializedUser.personalDomain}
+                  </Link>
+                </div>
+              )}
             </div>
           </main>
         </StyledThemeProvider>
