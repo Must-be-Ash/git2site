@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { connectDB } from "@/lib/db";
 import { User } from "@/lib/models/user";
-import { fetchUserProfile } from "@/lib/github";
 import { SignJWT } from "jose";
 
 export async function GET(request: Request) {
@@ -101,7 +100,7 @@ export async function GET(request: Request) {
     });
 
     // Trigger background task for fetching additional user data
-    fetch('/api/user/update-profile', {
+    fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/user/update-profile`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user._id.toString() }),

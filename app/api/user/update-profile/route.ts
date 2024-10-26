@@ -15,10 +15,11 @@ export async function POST(req: Request) {
 
     const profileData = await fetchUserProfile(user.username, user.githubAccessToken);
 
-    user.name = profileData.name;
-    user.bio = profileData.bio;
-    user.avatar = profileData.avatar;
-    await user.save();
+    await User.findByIdAndUpdate(userId, {
+      name: profileData.name,
+      bio: profileData.bio,
+      avatar: profileData.avatar,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
