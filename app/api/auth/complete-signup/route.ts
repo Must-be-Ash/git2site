@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { connectDB } from "@/lib/db";
-import { User } from "@/lib/models/user";
+import { User, IUser } from "@/lib/models/user";
 import { SignJWT, jwtVerify } from "jose";
 
 export async function POST(request: Request) {
@@ -29,10 +29,15 @@ export async function POST(request: Request) {
         },
       },
       { upsert: true, new: true, lean: true }
-    );
+    ) as (IUser & { _id: string }) | null;
+
+    if (!user) {
+      console.error("Failed to create or update user");
+      return NextResponse.json({ error: "Failed to create or update user" }, { status: 500 });
+    }
 
     console.log("Generating new JWT");
-    const newToken = await new SignJWT({ userId: user._id.toString(), username: user.username })
+    const newToken = await new SignJWT({ userId: user._id, username: user.username })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('7d')

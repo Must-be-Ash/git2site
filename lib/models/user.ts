@@ -1,11 +1,41 @@
 import mongoose from 'mongoose';
 
-const userSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-  },
+export interface IUser extends mongoose.Document {
+  username: string;
+  githubId: string;
+  githubAccessToken: string;
+  name?: string;
+  bio?: string;
+  avatar?: string;
+  isVerified: boolean;
+  theme?: {
+    name: string;
+    buttonStyle: string;
+    cardStyle: string;
+    fontFamily: string;
+    colors: {
+      background: string;
+      foreground: string;
+      card: string;
+      'card-foreground': string;
+      primary: string;
+      secondary: string;
+      button: string;
+      'button-foreground': string;
+    };
+  };
+  socialLinks?: {
+    linkedinUrl?: string;
+    twitterUrl?: string;
+    emailAddress?: string;
+  };
+  personalDomain?: string;
+}
+
+const userSchema = new mongoose.Schema<IUser>({
+  username: { type: String, required: true, unique: true },
+  githubId: { type: String, required: true, unique: true },
+  githubAccessToken: { type: String, required: true },
   name: String,
   bio: String,
   avatar: String,
@@ -35,7 +65,6 @@ const userSchema = new mongoose.Schema({
     emailAddress: String,
   },
   personalDomain: String,
-  githubAccessToken: String,
 }, { timestamps: true });
 
-export const User = mongoose.models.User || mongoose.model('User', userSchema);
+export const User = mongoose.models.User || mongoose.model<IUser>('User', userSchema);
