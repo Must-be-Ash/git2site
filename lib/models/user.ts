@@ -13,28 +13,11 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  location: String,
-  blog: String,
-  twitter: String,
   theme: {
-    id: {
-      type: String,
-      default: 'light',
-    },
-    colors: {
-      primary: String,
-      secondary: String,
-      background: String,
-    },
+    id: String,
+    colors: Object,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  githubAccessToken: String,
+}, { timestamps: true });
 
 export const User = mongoose.models.User || mongoose.model('User', userSchema);

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import { User } from '@/lib/models/user';
-import { octokit } from '@/lib/github';
+import { createOctokit } from '@/lib/github';
 
 export async function POST(req: Request) {
   try {
@@ -19,15 +19,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Check if the user has already been verified
     if (user.isVerified) {
       return NextResponse.json({ error: 'User is already verified' }, { status: 400 });
     }
 
     // Verify the token by checking a gist or repository
     try {
+      const octokit = createOctokit(process.env.GITHUB_TOKEN!);
       const { data: gists } = await octokit.gists.list({ username });
-      const verificationGist = gists.find(gist => 
+      const verificationGist = gists.find((gist: any) => 
         gist.description === 'Git2Site Verification'
       );
 

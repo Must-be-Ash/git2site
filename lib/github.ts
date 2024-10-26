@@ -6,8 +6,8 @@ const ThrottledOctokit = Octokit.plugin(throttling, restEndpointMethods);
 
 type ThrottledOctokitType = InstanceType<typeof ThrottledOctokit>;
 
-export const octokit = new ThrottledOctokit({
-  auth: process.env.GITHUB_TOKEN,
+export const createOctokit = (accessToken: string) => new ThrottledOctokit({
+  auth: accessToken,
   throttle: {
     onRateLimit: (retryAfter, options, octokit) => {
       octokit.log.warn(`Rate limit exceeded, retrying after ${retryAfter} seconds`);
@@ -35,7 +35,7 @@ export interface GitHubRepository {
   description: string | null;
   url: string;
   homepage: string | null | undefined;
-  stars: number;  // We'll ensure this is always a number in the mapping function
+  stars: number;
   language: string | null;
   topics: string[];
   isPublic: boolean;
@@ -43,7 +43,8 @@ export interface GitHubRepository {
   order: number;
 }
 
-export async function fetchUserRepositories(username: string): Promise<GitHubRepository[]> {
+export async function fetchUserRepositories(username: string, accessToken: string): Promise<GitHubRepository[]> {
+  const octokit = createOctokit(accessToken);
   try {
     const { data: repos } = await octokit.rest.repos.listForUser({
       username,
@@ -72,7 +73,8 @@ export async function fetchUserRepositories(username: string): Promise<GitHubRep
   }
 }
 
-export async function fetchUserProfile(username: string): Promise<GitHubProfile> {
+export async function fetchUserProfile(username: string, accessToken: string): Promise<GitHubProfile> {
+  const octokit = createOctokit(accessToken);
   try {
     const { data: profile } = await octokit.rest.users.getByUsername({
       username,

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { connectDB } from "@/lib/db";
 import { User } from "@/lib/models/user";
-import { octokit } from "@/lib/github";
 import { fetchUserProfile, fetchUserRepositories } from "@/lib/github";
 
 export async function GET(request: Request) {
@@ -10,7 +9,7 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
 
   if (!code) {
-    return NextResponse.redirect("/login?error=missing_code");
+    return NextResponse.redirect(new URL("/login?error=missing_code", request.url));
   }
 
   try {
@@ -30,14 +29,22 @@ export async function GET(request: Request) {
     const tokenData = await tokenResponse.json();
 
     if (tokenData.error) {
-      return NextResponse.redirect("/login?error=invalid_code");
+      console.error("GitHub OAuth error:", tokenData.error);
+      return NextResponse.redirect(new URL("/login?error=invalid_code", request.url));
     }
+
+    const accessToken = tokenData.access_token;
 
     const userResponse = await fetch("https://api.github.com/user", {
       headers: {
-        Authorization: `Bearer ${tokenData.access_token}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
+
+    if (!userResponse.ok) {
+      console.error("GitHub API error:", await userResponse.text());
+      return NextResponse.redirect(new URL("/login?error=github_api_error", request.url));
+    }
 
     const userData = await userResponse.json();
 
@@ -46,8 +53,8 @@ export async function GET(request: Request) {
     let user = await User.findOne({ username: userData.login });
     
     const [profileData, repositories] = await Promise.all([
-      fetchUserProfile(userData.login),
-      fetchUserRepositories(userData.login),
+      fetchUserProfile(userData.login, accessToken),
+      fetchUserRepositories(userData.login, accessToken),
     ]);
 
     if (!user) {
@@ -57,28 +64,24 @@ export async function GET(request: Request) {
         bio: profileData.bio,
         avatar: profileData.avatar,
         isVerified: true,
+        githubAccessToken: accessToken,
       });
     } else {
       user.name = profileData.name;
       user.bio = profileData.bio;
       user.avatar = profileData.avatar;
       user.isVerified = true;
+      user.githubAccessToken = accessToken;
     }
     await user.save();
 
     // Update repositories
-    // (You'll need to create a Repository model and implement this part)
+    // (Implement this part to save repositories to the database)
 
     // Set session cookie
-    const cookieStore = await cookies();
-    cookieStore.set("session", JSON.stringify({
-      accessToken: tokenData.access_token,
-      user: {
-        id: userData.id,
-        login: userData.login,
-        name: userData.name,
-        avatar: userData.avatar_url,
-      },
+    cookies().set("session", JSON.stringify({
+      userId: user._id,
+      username: user.username,
     }), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -86,9 +89,9 @@ export async function GET(request: Request) {
       maxAge: 60 * 60 * 24 * 7, // 1 week
     });
 
-    return NextResponse.redirect(`/${userData.login}`);
+    return NextResponse.redirect(new URL(`/${userData.login}`, request.url));
   } catch (error) {
     console.error("GitHub OAuth error:", error);
-    return NextResponse.redirect("/login?error=server_error");
+    return NextResponse.redirect(new URL("/login?error=server_error", request.url));
   }
 }
