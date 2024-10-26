@@ -1,7 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+/* Base styles */
 :root {
   --font-sans: 'Inter', sans-serif;
   --background: 0 0% 100%;
@@ -26,7 +23,7 @@
   --radius: 0.5rem;
 }
 
-/* Theme-specific styles */
+/* 80s theme */
 .theme-80s {
   --font-sans: 'VT323', monospace;
   --background: linear-gradient(to bottom, #ff00ff, #00ffff);
@@ -50,6 +47,18 @@
   filter: hue-rotate(180deg) saturate(200%);
 }
 
+.theme-80s .theme-button {
+  background: var(--button);
+  color: var(--button-foreground);
+  border: 2px solid #00ffff;
+}
+
+.theme-80s .theme-tag {
+  background: var(--tag);
+  color: var(--tag-foreground);
+}
+
+/* Arcade theme */
 .theme-arcade {
   --font-sans: 'Press Start 2P', cursive;
   --background: #000000;
@@ -73,6 +82,18 @@
   image-rendering: pixelated;
 }
 
+.theme-arcade .theme-button {
+  background: var(--button);
+  color: var(--button-foreground);
+  border: 2px solid #ffffff;
+}
+
+.theme-arcade .theme-tag {
+  background: var(--tag);
+  color: var(--tag-foreground);
+}
+
+/* Vintage theme */
 .theme-vintage {
   --font-sans: 'Courier New', monospace;
   --background: #f4e9d8;
@@ -96,6 +117,17 @@
   filter: sepia(100%) contrast(150%);
 }
 
+.theme-vintage .theme-button {
+  background: var(--button);
+  color: var(--button-foreground);
+}
+
+.theme-vintage .theme-tag {
+  background: var(--tag);
+  color: var(--tag-foreground);
+}
+
+/* Windows 98 theme */
 .theme-windows98 {
   --font-sans: 'MS Sans Serif', sans-serif;
   --background: #008080;
@@ -115,6 +147,19 @@
   box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #dfdfdf, inset -2px -2px grey, inset 2px 2px #fff;
 }
 
+.theme-windows98 .theme-button {
+  background: var(--button);
+  color: var(--button-foreground);
+  border: 2px outset #ffffff;
+}
+
+.theme-windows98 .theme-tag {
+  background: var(--tag);
+  color: var(--tag-foreground);
+  border: 1px solid #000000;
+}
+
+/* Sin City theme */
 .theme-sin-city {
   --font-sans: 'Oswald', sans-serif;
   --background: #000000;
@@ -137,6 +182,17 @@
   filter: grayscale(100%) contrast(150%);
 }
 
+.theme-sin-city .theme-button {
+  background: var(--button);
+  color: var(--button-foreground);
+}
+
+.theme-sin-city .theme-tag {
+  background: var(--tag);
+  color: var(--tag-foreground);
+}
+
+/* Modern theme */
 .theme-modern {
   --font-sans: 'Inter', sans-serif;
   --background: #ffffff;
@@ -154,6 +210,18 @@
 .theme-modern .theme-card {
   border: none;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.theme-modern .theme-button {
+  background: var(--button);
+  color: var(--button-foreground);
+  border-radius: 20px;
+}
+
+.theme-modern .theme-tag {
+  background: var(--tag);
+  color: var(--tag-foreground);
+  border-radius: 20px;
 }
 
 /* Global styles */
@@ -179,14 +247,10 @@ body {
 }
 
 .theme-button {
-  background: var(--button);
-  color: var(--button-foreground);
   transition: all 0.3s ease;
 }
 
 .theme-tag {
-  background: var(--tag);
-  color: var(--tag-foreground);
   transition: all 0.3s ease;
 }
 

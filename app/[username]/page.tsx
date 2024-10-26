@@ -35,7 +35,9 @@ export default async function PortfolioPage(props: Props) {
   const { verified } = props.searchParams;
   
   try {
+    console.log('Connecting to database...');
     await connectDB();
+    console.log('Connected to database');
     
     console.log(`Fetching user data for username: ${username}`);
     const user = await User.findOne({ username });
@@ -79,6 +81,6 @@ export default async function PortfolioPage(props: Props) {
     );
   } catch (error) {
     console.error('Error in PortfolioPage:', error);
-    return <div>An error occurred while loading the portfolio. Please try again later.</div>;
+    return <div>An error occurred while loading the portfolio. Please try again later. Error: {(error as Error).message}</div>;
   }
 }
