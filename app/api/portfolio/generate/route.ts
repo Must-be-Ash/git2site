@@ -4,6 +4,8 @@ import { User } from '@/lib/models/user';
 import { getUserFromSession } from "@/lib/auth";
 import { startPortfolioGeneration } from '@/lib/portfolioGenerator';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const user = await getUserFromSession(req);

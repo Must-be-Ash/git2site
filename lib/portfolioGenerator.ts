@@ -1,15 +1,15 @@
-import { User } from "@/lib/models/user";
+import { IUser, User } from "@/lib/models/user";
 import { Repository } from "@/lib/models/repository";
 import { Octokit } from "@octokit/rest";
 
-export async function startPortfolioGeneration(user: User) {
+export async function startPortfolioGeneration(user: IUser) {
   const jobId = `job_${Date.now()}_${user._id}`;
   // Start the generation process in the background
   generatePortfolio(user, jobId);
   return jobId;
 }
 
-async function generatePortfolio(user: User, jobId: string) {
+async function generatePortfolio(user: IUser, jobId: string) {
   const octokit = new Octokit({ auth: user.githubAccessToken });
   let page = 1;
   const perPage = 100;

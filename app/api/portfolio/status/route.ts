@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getUserFromSession } from "@/lib/auth";
 import { getPortfolioGenerationStatus } from '@/lib/portfolioGenerator';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   try {
     const user = await getUserFromSession(req);
