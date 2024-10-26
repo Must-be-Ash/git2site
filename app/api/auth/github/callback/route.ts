@@ -59,29 +59,21 @@ export async function GET(request: Request) {
     await connectDB();
     console.log("Database connection established");
 
-    console.log("Checking for existing user");
-    let user = await User.findOne({ username: userData.login });
-    
-    if (!user) {
-      console.log("Creating new user");
-      user = new User({
-        username: userData.login,
-        name: userData.name,
-        bio: userData.bio,
-        avatar: userData.avatar_url,
-        isVerified: true,
-        githubAccessToken: accessToken,
-      });
-    } else {
-      console.log("Updating existing user");
-      user.name = userData.name;
-      user.bio = userData.bio;
-      user.avatar = userData.avatar_url;
-      user.isVerified = true;
-      user.githubAccessToken = accessToken;
-    }
-    await user.save();
-    console.log("User saved to database");
+    console.log("Upserting user");
+    const user = await User.findOneAndUpdate(
+      { username: userData.login },
+      {
+        $set: {
+          name: userData.name,
+          bio: userData.bio,
+          avatar: userData.avatar_url,
+          isVerified: true,
+          githubAccessToken: accessToken,
+        },
+      },
+      { upsert: true, new: true }
+    );
+    console.log("User upserted successfully");
 
     console.log("Generating JWT");
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
