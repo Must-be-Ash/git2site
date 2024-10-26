@@ -43,52 +43,57 @@ export async function POST(req: Request) {
 
     console.log('Fetching user data from GitHub');
     // Fetch user data from GitHub
-    const [userData, repositories] = await Promise.all([
-      fetchUserProfile(username),
-      fetchUserRepositories(username),
-    ]);
-    console.log('GitHub data fetched successfully');
+    try {
+      const [userData, repositories] = await Promise.all([
+        fetchUserProfile(username),
+        fetchUserRepositories(username),
+      ]);
+      console.log('GitHub data fetched successfully');
 
-    // Create or update user in the database
-    if (!user) {
-      console.log('Creating new user');
-      user = new User({
-        username,
-        name: userData.name,
-        bio: userData.bio,
-        avatar: userData.avatar,
-        theme: { id: 'light' }, // Default theme
-      });
-    } else {
-      console.log('Updating existing user');
-      user.name = userData.name;
-      user.bio = userData.bio;
-      user.avatar = userData.avatar;
-    }
-    await user.save();
-    console.log('User saved');
-
-    // Create or update repositories in the database
-    console.log('Updating repositories');
-    const repoPromises = repositories.map(async (repo) => {
-      const existingRepo = await Repository.findOne({ userId: user._id, name: repo.name });
-      if (existingRepo) {
-        Object.assign(existingRepo, repo);
-        return existingRepo.save();
+      // Create or update user in the database
+      if (!user) {
+        console.log('Creating new user');
+        user = new User({
+          username,
+          name: userData.name,
+          bio: userData.bio,
+          avatar: userData.avatar,
+          theme: { id: 'light' }, // Default theme
+        });
       } else {
-        return Repository.create({ ...repo, userId: user._id });
+        console.log('Updating existing user');
+        user.name = userData.name;
+        user.bio = userData.bio;
+        user.avatar = userData.avatar;
       }
-    });
-    await Promise.all(repoPromises);
-    console.log('Repositories updated');
+      await user.save();
+      console.log('User saved');
 
-    console.log('Portfolio generation completed successfully');
-    return NextResponse.json({
-      success: true,
-      username,
-      profile: userData,
-      repositories,
-    });
+      // Create or update repositories in the database
+      console.log('Updating repositories');
+      const repoPromises = repositories.map(async (repo) => {
+        const existingRepo = await Repository.findOne({ userId: user._id, name: repo.name });
+        if (existingRepo) {
+          Object.assign(existingRepo, repo);
+          return existingRepo.save();
+        } else {
+          return Repository.create({ ...repo, userId: user._id });
+        }
+      });
+      await Promise.all(repoPromises);
+      console.log('Repositories updated');
+
+      console.log('Portfolio generation completed successfully');
+      return NextResponse.json({
+        success: true,
+        username,
+        profile: userData,
+        repositories,
+      });
+    } catch (githubError) {
+      console.error('Error fetching data from GitHub:', githubError);
+      throw new Error(`Failed to fetch data from GitHub: ${githubError instanceof Error ? githubError.message : 'Unknown error'}`);
+    }
   } catch (error) {
     console.error('Portfolio generation error:', error);
     return NextResponse.json(

@@ -7,7 +7,6 @@ import { RepositoryGrid } from '@/components/portfolio/repository-grid';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { VerificationPrompt } from '@/components/verification-prompt';
 import { RefreshButton } from '@/components/refresh-button';
-import { cookies } from 'next/headers';
 
 export async function generateMetadata({ params }: { params: { username: string } }) {
   return {
@@ -20,6 +19,16 @@ type Props = {
   params: { username: string };
   searchParams: { [key: string]: string | string[] | undefined };
 };
+
+// Helper function to serialize Mongoose documents
+function serializeDocument(doc: any) {
+  const serialized = JSON.parse(JSON.stringify(doc));
+  if (serialized._id) {
+    serialized.id = serialized._id.toString();
+    delete serialized._id;
+  }
+  return serialized;
+}
 
 export default async function PortfolioPage(props: Props) {
   const { username } = props.params;
@@ -42,24 +51,28 @@ export default async function PortfolioPage(props: Props) {
 
     console.log(`Found ${repositories.length} repositories`);
 
+    // Serialize the user and repositories
+    const serializedUser = serializeDocument(user);
+    const serializedRepositories = repositories.map(serializeDocument);
+
     // Check if the user was just verified
     if (verified === 'true') {
-      user.isVerified = true;
-      await user.save();
+      serializedUser.isVerified = true;
+      await User.findByIdAndUpdate(user._id, { isVerified: true });
     }
 
     return (
       <ThemeProvider
         attribute="class"
-        defaultTheme={user.theme?.id || 'light'}
-        forcedTheme={user.theme?.id || 'light'}
+        defaultTheme={serializedUser.theme?.id || 'light'}
+        forcedTheme={serializedUser.theme?.id || 'light'}
       >
         <main className="min-h-screen bg-background">
-          <PortfolioHeader user={user} />
-          {!user.isVerified && <VerificationPrompt username={username} />}
+          <PortfolioHeader user={serializedUser} />
+          {!serializedUser.isVerified && <VerificationPrompt username={username} />}
           <div className="container px-4 py-8">
             <RefreshButton username={username} />
-            <RepositoryGrid repositories={repositories} />
+            <RepositoryGrid repositories={serializedRepositories} />
           </div>
         </main>
       </ThemeProvider>

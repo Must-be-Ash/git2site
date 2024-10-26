@@ -34,6 +34,7 @@ const repositorySchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  thumbnailUrl: String,
 });
 
 export const Repository = mongoose.models.Repository || mongoose.model('Repository', repositorySchema);

@@ -59,7 +59,7 @@ export async function fetchUserRepositories(username: string): Promise<GitHubRep
         description: repo.description,
         url: repo.html_url,
         homepage: repo.homepage ?? null,
-        stars: repo.stargazers_count ?? 0,  // Use 0 if stargazers_count is undefined
+        stars: repo.stargazers_count ?? 0,
         language: repo.language ?? null,
         topics: repo.topics || [],
         isPublic: !repo.private,
