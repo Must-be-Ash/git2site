@@ -4,7 +4,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: { 
-    domains: ['localhost', 'your-production-domain.com'],
+    domains: ['your-image-domain.com'],
   },
   experimental: {
     optimizeCss: true,
