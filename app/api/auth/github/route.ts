@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   const clientId = process.env.GITHUB_CLIENT_ID;
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/github/callback`;
+  const redirectUri = "https://www.git2site.pro/api/auth/github/callback";
   const scope = "read:user repo";
 
   if (!clientId) {

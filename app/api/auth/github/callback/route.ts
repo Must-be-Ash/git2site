@@ -3,12 +3,14 @@ import { cookies } from "next/headers";
 import { connectDB } from "@/lib/db";
 import { User } from "@/lib/models/user";
 import { fetchUserProfile, fetchUserRepositories } from "@/lib/github";
+import { SignJWT } from "jose";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
 
   if (!code) {
+    console.error("Missing code in GitHub callback");
     return NextResponse.redirect(new URL("/login?error=missing_code", request.url));
   }
 
@@ -30,7 +32,7 @@ export async function GET(request: Request) {
 
     if (tokenData.error) {
       console.error("GitHub OAuth error:", tokenData.error);
-      return NextResponse.redirect(new URL("/login?error=invalid_code", request.url));
+      return NextResponse.redirect(new URL(`/login?error=${tokenData.error}`, request.url));
     }
 
     const accessToken = tokenData.access_token;
@@ -42,8 +44,9 @@ export async function GET(request: Request) {
     });
 
     if (!userResponse.ok) {
-      console.error("GitHub API error:", await userResponse.text());
-      return NextResponse.redirect(new URL("/login?error=github_api_error", request.url));
+      const errorText = await userResponse.text();
+      console.error("GitHub API error:", errorText);
+      return NextResponse.redirect(new URL(`/login?error=github_api_error&details=${encodeURIComponent(errorText)}`, request.url));
     }
 
     const userData = await userResponse.json();
@@ -78,11 +81,15 @@ export async function GET(request: Request) {
     // Update repositories
     // (Implement this part to save repositories to the database)
 
-    // Set session cookie
-    cookies().set("session", JSON.stringify({
-      userId: user._id,
-      username: user.username,
-    }), {
+    // Update session cookie with signing
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const token = await new SignJWT({ userId: user._id.toString(), username: user.username })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('7d')
+      .sign(secret);
+
+    cookies().set("session", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -91,8 +98,14 @@ export async function GET(request: Request) {
 
     // Redirect to the dashboard
     return NextResponse.redirect(new URL("/dashboard", request.url));
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("GitHub OAuth error:", error);
-    return NextResponse.redirect(new URL("/login?error=server_error", request.url));
+    let errorMessage = "An unknown error occurred";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === "string") {
+      errorMessage = error;
+    }
+    return NextResponse.redirect(new URL(`/login?error=server_error&details=${encodeURIComponent(errorMessage)}`, request.url));
   }
 }
