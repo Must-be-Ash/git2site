@@ -63,24 +63,21 @@ export async function GET(request: Request) {
     console.log("Checking for existing user");
     let user = await User.findOne({ username: userData.login });
     
-    console.log("Fetching user profile");
-    const profileData = await fetchUserProfile(userData.login, accessToken);
-
     if (!user) {
       console.log("Creating new user");
       user = new User({
         username: userData.login,
-        name: profileData.name,
-        bio: profileData.bio,
-        avatar: profileData.avatar,
+        name: userData.name,
+        bio: userData.bio,
+        avatar: userData.avatar_url,
         isVerified: true,
         githubAccessToken: accessToken,
       });
     } else {
       console.log("Updating existing user");
-      user.name = profileData.name;
-      user.bio = profileData.bio;
-      user.avatar = profileData.avatar;
+      user.name = userData.name;
+      user.bio = userData.bio;
+      user.avatar = userData.avatar_url;
       user.isVerified = true;
       user.githubAccessToken = accessToken;
     }
@@ -102,6 +99,13 @@ export async function GET(request: Request) {
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 1 week
     });
+
+    // Trigger background task for fetching additional user data
+    fetch('/api/user/update-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user._id.toString() }),
+    }).catch(console.error);
 
     console.log("Redirecting to dashboard");
     return NextResponse.redirect(new URL("/dashboard", request.url));
