@@ -1,23 +1,9 @@
-import { cookies } from "next/headers";
-import { jwtVerify } from "jose";
-import { User } from "@/lib/models/user";
+import { NextRequest } from 'next/server';
+import { User } from './models/user';
 
-export async function getUserFromSession(req: Request) {
-  const cookieStore = cookies();
-  const sessionCookie = cookieStore.get("session");
-
-  if (!sessionCookie) {
-    return null;
-  }
-
-  try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const { payload } = await jwtVerify(sessionCookie.value, secret);
-
-    const user = await User.findById(payload.userId);
-    return user;
-  } catch (error) {
-    console.error("Error verifying session:", error);
-    return null;
-  }
+export async function getAuthenticatedUser(req: NextRequest): Promise<User | null> {
+  // Implement your authentication logic here
+  // This is just a placeholder, replace with your actual authentication logic
+  // Make sure to return a User object with _id
+  return null;
 }

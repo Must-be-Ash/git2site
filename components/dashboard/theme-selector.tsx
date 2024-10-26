@@ -1,26 +1,26 @@
-import { Button } from '@/components/ui/button';
-import { themes, ThemeName } from '@/lib/themes';
+import React from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Theme } from '@/types/theme';
 
 interface ThemeSelectorProps {
-  currentTheme: ThemeName;
-  onThemeChange: (theme: ThemeName) => void;
+  currentTheme: string;
+  presetThemes: Record<string, Theme>;
+  onThemeChange: (themeName: string) => void;
 }
 
-export function ThemeSelector({ currentTheme, onThemeChange }: ThemeSelectorProps) {
+export function ThemeSelector({ currentTheme, presetThemes, onThemeChange }: ThemeSelectorProps) {
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Select Theme</h2>
-      <div className="grid grid-cols-3 gap-4">
-        {(Object.keys(themes) as ThemeName[]).map((key) => (
-          <Button
-            key={key}
-            onClick={() => onThemeChange(key)}
-            variant={currentTheme === key ? 'default' : 'outline'}
-          >
-            {themes[key].name}
-          </Button>
+    <Select onValueChange={onThemeChange} defaultValue={currentTheme}>
+      <SelectTrigger>
+        <SelectValue placeholder="Select a preset theme" />
+      </SelectTrigger>
+      <SelectContent>
+        {Object.entries(presetThemes).map(([key, theme]) => (
+          <SelectItem key={key} value={key}>
+            {theme.name}
+          </SelectItem>
         ))}
-      </div>
-    </div>
+      </SelectContent>
+    </Select>
   );
 }

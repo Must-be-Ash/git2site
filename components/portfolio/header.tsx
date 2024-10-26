@@ -1,5 +1,6 @@
 import { Github, Globe, MapPin, Twitter } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import Image from 'next/image';
 
 export function PortfolioHeader({ user }: { user: any }) {
   return (
@@ -7,10 +8,12 @@ export function PortfolioHeader({ user }: { user: any }) {
       <div className="container px-4 py-8">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-4">
-            <img
+            <Image
               src={user.avatar}
               alt={user.name}
-              className="h-24 w-24 rounded-full"
+              width={100}
+              height={100}
+              className="rounded-full mx-auto mb-4"
             />
             <div>
               <h1 className="text-3xl font-bold">{user.name}</h1>

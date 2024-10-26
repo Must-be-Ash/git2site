@@ -1,32 +1,29 @@
 "use client";
 
-import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import React from 'react';
+import { Button } from "@/components/ui/button";
+import { RefreshCw, Loader2 } from 'lucide-react';
 
-export function RefreshPortfolio() {
-  const [isRefreshing, setIsRefreshing] = useState(false);
+interface RefreshPortfolioProps {
+  onRefresh: () => void;
+  isGenerating: boolean;
+  progress: number;
+}
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      // Call your API to refresh the portfolio
-      const response = await fetch('/api/portfolio/refresh', { method: 'POST' });
-      if (!response.ok) throw new Error('Failed to refresh portfolio');
-      toast.success('Portfolio refreshed successfully');
-    } catch (error) {
-      toast.error('Failed to refresh portfolio');
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
+export function RefreshPortfolio({ onRefresh, isGenerating, progress }: RefreshPortfolioProps) {
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-semibold">Refresh Portfolio</h2>
-      <Button onClick={handleRefresh} disabled={isRefreshing}>
-        {isRefreshing ? 'Refreshing...' : 'Refresh Portfolio'}
-      </Button>
-    </div>
+    <Button onClick={onRefresh} disabled={isGenerating}>
+      {isGenerating ? (
+        <>
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          Generating... ({progress})
+        </>
+      ) : (
+        <>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Generate Portfolio
+        </>
+      )}
+    </Button>
   );
 }

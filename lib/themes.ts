@@ -169,4 +169,6 @@ export const themes: Record<ThemeName, Theme> = {
   },
 };
 
+export const defaultTheme: Theme = themes.base;
+
 export const getTheme = (themeName: ThemeName): Theme => themes[themeName];
