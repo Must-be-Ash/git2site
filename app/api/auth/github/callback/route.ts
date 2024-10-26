@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { connectDB } from "@/lib/db";
-import { User } from "@/lib/models/user";
 import { SignJWT } from "jose";
 
 export async function GET(request: Request) {
@@ -55,38 +53,25 @@ export async function GET(request: Request) {
     const userData = await userResponse.json();
     console.log("Basic user data fetched successfully");
 
-    console.log("Connecting to database");
-    await connectDB();
-    console.log("Database connection established");
-
-    console.log("Upserting user");
-    const user = await User.findOneAndUpdate(
-      { username: userData.login },
-      {
-        $set: {
-          name: userData.name,
-          avatar: userData.avatar_url,
-          githubAccessToken: accessToken,
-        },
-      },
-      { upsert: true, new: true }
-    );
-    console.log("User upserted successfully");
-
-    console.log("Generating JWT");
+    // Generate a temporary JWT token with GitHub data
+    console.log("Generating temporary JWT");
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const token = await new SignJWT({ userId: user._id.toString(), username: user.username })
+    const token = await new SignJWT({ 
+      githubId: userData.id,
+      username: userData.login,
+      accessToken: accessToken
+    })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
-      .setExpirationTime('7d')
+      .setExpirationTime('15m') // Short expiration for security
       .sign(secret);
 
-    console.log("Setting session cookie");
-    cookies().set("session", token, {
+    console.log("Setting temporary session cookie");
+    cookies().set("temp_session", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 1 week
+      maxAge: 60 * 15, // 15 minutes
     });
 
     console.log("Redirecting to dashboard");

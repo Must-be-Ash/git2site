@@ -15,6 +15,7 @@ import { generateThumbnail } from '@/lib/thumbnailService';
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useUser } from '@/lib/hooks/useUser'; // Add this import
+import { useRouter } from 'next/navigation';
 
 interface Project {
   id: string;
@@ -233,6 +234,8 @@ export default function DashboardPage() {
   const [languageTagColor, setLanguageTagColor] = useState(customTheme.colors.tag || '#e0e0e0');
   const [generatingPortfolio, setGeneratingPortfolio] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     console.log("Dashboard component mounted");
@@ -241,6 +244,27 @@ export default function DashboardPage() {
       fetchUserData();
     }
   }, [user]);
+
+  useEffect(() => {
+    const completeSignup = async () => {
+      try {
+        const response = await fetch('/api/auth/complete-signup', { method: 'POST' });
+        if (!response.ok) {
+          throw new Error('Failed to complete signup');
+        }
+        // Fetch user data and set up the dashboard
+        await fetchUserData();
+      } catch (error) {
+        console.error('Error completing signup:', error);
+        toast.error('An error occurred. Please try logging in again.');
+        router.push('/login');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    completeSignup();
+  }, []);
 
   const fetchUserData = async () => {
     console.log("Fetching user data");
@@ -514,6 +538,10 @@ export default function DashboardPage() {
         </CardFooter>
       </Card>
     );
+  }
+
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
   return (
