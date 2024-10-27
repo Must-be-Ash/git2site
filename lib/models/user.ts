@@ -44,6 +44,33 @@ const userSchema = new mongoose.Schema({
   githubAccessToken: String,
 }, { timestamps: true });
 
+// Add this interface if not already present
+interface UserPreferences {
+  theme?: {
+    name: String,
+    buttonStyle: String,
+    cardStyle: String,
+    fontFamily: String,
+    colors: {
+      background: String,
+      foreground: String,
+      card: String,
+      'card-foreground': String,
+      primary: String,
+      secondary: String,
+      button: String,
+      'button-foreground': String,
+    },
+  };
+  socialLinks?: {
+    linkedinUrl?: string;
+    twitterUrl?: string;
+    emailAddress?: string;
+  };
+  personalDomain?: string;
+}
+
+// Update the User interface/schema to include preferences
 export interface UserDocument extends mongoose.Document {
   _id: mongoose.Types.ObjectId;
   githubId: string;
@@ -52,6 +79,7 @@ export interface UserDocument extends mongoose.Document {
   email: string;
   avatar: string;
   githubAccessToken: string;
+  preferences?: UserPreferences;
   // Add other properties as needed
 }
 
