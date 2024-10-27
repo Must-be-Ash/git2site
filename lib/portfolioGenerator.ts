@@ -10,6 +10,17 @@ const BASE_URL = process.env.NODE_ENV === 'production'
   ? 'https://www.git2site.pro' 
   : 'http://localhost:3000';
 
+// Update the repository interface at the top of the file
+interface Repository {
+  name: string;
+  description: string;
+  url: string;
+  stars: number;
+  forks: number;
+  languages: string[];
+  homepage?: string;  // Add this
+}
+
 export async function getPortfolioGenerationStatus(userId: string): Promise<string> {
   await connectDB();
   const portfolio = await PortfolioService.findOne({ userId });
@@ -108,6 +119,7 @@ async function updatePortfolioStatus(userId: string, status: string): Promise<vo
   await PortfolioService.updateOne({ userId }, { $set: { status } });
 }
 
+// Update the fetchUserRepositories function signature
 async function fetchUserRepositories(accessToken: string) {
   const octokit = new Octokit({ auth: accessToken });
   const { data: repos } = await octokit.repos.listForAuthenticatedUser({
@@ -116,14 +128,25 @@ async function fetchUserRepositories(accessToken: string) {
     visibility: 'public'
   });
 
-  return repos.map(repo => ({
-    name: repo.name,
-    description: repo.description || '',
-    url: repo.html_url,
-    stars: repo.stargazers_count,
-    forks: repo.forks_count,
-    language: repo.language || 'Unknown'
+  // Fetch languages for each repository
+  const reposWithLanguages = await Promise.all(repos.map(async (repo) => {
+    const { data: languages } = await octokit.repos.listLanguages({
+      owner: repo.owner.login,
+      repo: repo.name,
+    });
+
+    return {
+      name: repo.name,
+      description: repo.description || '',
+      url: repo.html_url,
+      stars: repo.stargazers_count,
+      forks: repo.forks_count,
+      languages: Object.keys(languages),
+      homepage: repo.homepage || `https://${repo.name}.vercel.app`
+    };
   }));
+
+  return reposWithLanguages;
 }
 
 async function generateUserSkills(accessToken: string) {
@@ -188,4 +211,26 @@ async function generateUserProjects(accessToken: string) {
   }));
 
   return projects;
+}
+
+// Update the processRepositories function to use one parameter
+async function processRepositories(accessToken: string) {
+  const repos = await fetchUserRepositories(accessToken);
+  
+  console.log('Fetched repositories with languages:', 
+    repos.map(r => ({ name: r.name, languages: r.languages }))
+  );
+
+  return {
+    status: 'completed',
+    data: repos.map(repo => ({
+      name: repo.name,
+      description: repo.description,
+      url: repo.url,
+      languages: repo.languages,
+      stars: repo.stars,
+      forks: repo.forks || 0,
+      homepage: repo.homepage
+    }))
+  };
 }

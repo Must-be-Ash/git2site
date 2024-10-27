@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db';
-import { Repository } from '@/lib/models/repository';
-import { generateThumbnail } from '@/lib/thumbnailService';
 import puppeteer from 'puppeteer';
+import { Repository } from '@/lib/models/repository';
+import { connectDB } from '@/lib/db';
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
   const repoId = searchParams.get('repo');
 
   if (!repoId) {
@@ -15,19 +14,28 @@ export async function GET(req: Request) {
   try {
     await connectDB();
     const repository = await Repository.findById(repoId);
-
-    if (!repository) {
-      return NextResponse.json({ error: 'Repository not found' }, { status: 404 });
+    if (!repository || !repository.websiteUrl) {
+      return NextResponse.json({ error: 'Repository or website URL not found' }, { status: 404 });
     }
 
-    if (!repository.thumbnailUrl) {
-      const thumbnailUrl = await generateThumbnail(repository.url, repository.name);
-      repository.thumbnailUrl = thumbnailUrl;
-      await repository.save();
-    }
+    // Generate thumbnail using puppeteer
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1200, height: 630 });
+    await page.goto(repository.websiteUrl);
+    const screenshot = await page.screenshot({ type: 'png' });
+    await browser.close();
 
-    // Redirect to the actual thumbnail URL
-    return NextResponse.redirect(repository.thumbnailUrl);
+    // Update repository with thumbnail
+    repository.thumbnailUrl = `data:image/png;base64,${Buffer.from(screenshot).toString('base64')}`;
+    await repository.save();
+
+    return new NextResponse(screenshot, {
+      headers: {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      },
+    });
   } catch (error) {
     console.error('Error generating thumbnail:', error);
     return NextResponse.json({ error: 'Failed to generate thumbnail' }, { status: 500 });

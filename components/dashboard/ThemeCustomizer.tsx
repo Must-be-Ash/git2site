@@ -1,33 +1,20 @@
 import React from 'react';
-import { Theme } from '@/types/theme';
+import { Theme } from '@/lib/themes';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ColorPicker } from './color-picker';
 
+type ThemeProperty = keyof Theme | `colors.${keyof Theme['colors']}`;
+
 interface ThemeCustomizerProps {
   theme: Theme;
-  onThemeChange: (property: keyof Theme | `colors.${keyof Theme['colors']}`, value: string) => void;
+  onThemeChange: (property: ThemeProperty, value: string) => void;
 }
 
 export function ThemeCustomizer({ theme, onThemeChange }: ThemeCustomizerProps) {
   return (
     <div className="space-y-4">
-      <div>
-        <Label htmlFor="preset-theme">Preset Theme</Label>
-        <Select
-          value={theme.name}
-          onValueChange={(value) => onThemeChange('name', value)}
-        >
-          <SelectTrigger id="preset-theme">
-            <SelectValue placeholder="Select a preset theme" />
-          </SelectTrigger>
-          <SelectContent>
-            {/* Add preset theme options here */}
-          </SelectContent>
-        </Select>
-      </div>
-
       <div>
         <Label htmlFor="font-family">Font Family</Label>
         <Select
@@ -49,18 +36,6 @@ export function ThemeCustomizer({ theme, onThemeChange }: ThemeCustomizerProps) 
         </Select>
       </div>
 
-      <ColorPicker
-        label="Background Color"
-        value={theme.colors.background}
-        onChange={(value) => onThemeChange('colors.background', value)}
-      />
-
-      <ColorPicker
-        label="Text Color"
-        value={theme.colors.foreground}
-        onChange={(value) => onThemeChange('colors.foreground', value)}
-      />
-
       <div>
         <Label htmlFor="card-style">Card Style</Label>
         <Select
@@ -78,12 +53,6 @@ export function ThemeCustomizer({ theme, onThemeChange }: ThemeCustomizerProps) 
         </Select>
       </div>
 
-      <ColorPicker
-        label="Card Color"
-        value={theme.colors.card}
-        onChange={(value) => onThemeChange('colors.card', value)}
-      />
-
       <div>
         <Label htmlFor="button-style">Button Style</Label>
         <Select
@@ -100,6 +69,24 @@ export function ThemeCustomizer({ theme, onThemeChange }: ThemeCustomizerProps) 
           </SelectContent>
         </Select>
       </div>
+
+      <ColorPicker
+        label="Background Color"
+        value={theme.colors.background}
+        onChange={(value) => onThemeChange('colors.background', value)}
+      />
+
+      <ColorPicker
+        label="Text Color"
+        value={theme.colors.foreground}
+        onChange={(value) => onThemeChange('colors.foreground', value)}
+      />
+
+      <ColorPicker
+        label="Card Color"
+        value={theme.colors.card}
+        onChange={(value) => onThemeChange('colors.card', value)}
+      />
 
       <ColorPicker
         label="Button Color"

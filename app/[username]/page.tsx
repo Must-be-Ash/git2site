@@ -67,6 +67,14 @@ export default async function UserPage({ params }: { params: { username: string 
     notFound();
   }
 
+  // Log the portfolio data to verify languages
+  console.log('Portfolio repositories:', 
+    portfolio.sections.repositories.data?.map(r => ({
+      name: r.name,
+      languages: r.languages
+    }))
+  );
+
   // Convert the stored theme to the Theme type
   const userTheme: Theme = {
     name: user.theme?.name || themes.base.name,

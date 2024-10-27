@@ -16,8 +16,8 @@ export interface ThemeColors {
 
 export interface Theme {
   name: string;
-  colors: ThemeColors;
   font: string;
   buttonStyle: 'default' | 'outline' | 'ghost';
   cardStyle: 'default' | 'bordered' | 'elevated';
+  colors: ThemeColors;
 }

@@ -1,14 +1,18 @@
 import React from 'react';
 import { ThemeCustomizer } from './ThemeCustomizer';
 import { ColorPicker } from './color-picker';
-import { Theme } from '@/types/theme';
+import { Theme } from '@/lib/themes';  // Use this import instead of from types/theme
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ThemeSelector } from './theme-selector';
+
+type ThemeProperty = keyof Theme | `colors.${keyof Theme['colors']}`;
 
 interface SidebarProps {
   theme: Theme;
-  onThemeChange: (property: keyof Theme | `colors.${keyof Theme['colors']}`, value: string) => void;
+  onThemeChange: (property: ThemeProperty, value: string) => void;
+  onThemeSelect?: (theme: Theme) => void;
   onButtonIconColorChange: (color: string) => void;
   onAccentTextColorChange: (color: string) => void;
   onLanguageTagColorChange: (color: string) => void;
@@ -31,6 +35,7 @@ interface SidebarProps {
 export function Sidebar({
   theme,
   onThemeChange,
+  onThemeSelect,
   onButtonIconColorChange,
   onAccentTextColorChange,
   onLanguageTagColorChange,
@@ -44,7 +49,22 @@ export function Sidebar({
   return (
     <div className="w-64 bg-muted p-4 overflow-y-auto">
       <h2 className="text-xl font-bold mb-4">Theme Customization</h2>
-      <ThemeCustomizer theme={theme} onThemeChange={onThemeChange} />
+      
+      {/* Add the ThemeSelector component */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2">
+          Preset Theme
+        </label>
+        <ThemeSelector 
+          currentTheme={theme} 
+          onThemeChange={onThemeSelect || (() => {})} 
+        />
+      </div>
+
+      <ThemeCustomizer 
+        theme={theme} 
+        onThemeChange={onThemeChange} 
+      />
       <ColorPicker
         label="Button Icon Color"
         value={theme.colors['button-foreground']}

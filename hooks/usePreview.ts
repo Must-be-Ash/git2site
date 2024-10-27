@@ -2,41 +2,50 @@
 
 import { useState, useEffect } from 'react';
 
-export function usePreview(url: string) {
+interface PreviewResult {
+  previewUrl: string | null;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+export function usePreview(url?: string): PreviewResult {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    async function fetchPreview() {
-      if (!url) return;
-      
-      setIsLoading(true);
-      setError(null);
+    if (!url) {
+      setIsLoading(false);
+      // Use placeholder image when no URL is provided
+      setPreviewUrl('/placeholder-project.png');
+      return;
+    }
 
+    const generatePreview = async () => {
       try {
-        const response = await fetch('/api/preview', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url })
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to generate preview');
+        setIsLoading(true);
+        // For GitHub URLs, use placeholder image
+        if (url.includes('github.com')) {
+          setPreviewUrl('/placeholder-project.png');
+        } else {
+          // For other URLs, try to use them directly
+          setPreviewUrl(url);
         }
-
-        const data = await response.json();
-        setPreviewUrl(data.preview);
+        setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to generate preview');
-        setPreviewUrl(null);
+        console.error('Preview generation error:', err);
+        setError(err instanceof Error ? err : new Error('Failed to generate preview'));
+        // Use placeholder image on error
+        setPreviewUrl('/placeholder-project.png');
       } finally {
         setIsLoading(false);
       }
-    }
+    };
 
-    fetchPreview();
+    generatePreview();
   }, [url]);
 
   return { previewUrl, isLoading, error };
 }
+
+export default usePreview;

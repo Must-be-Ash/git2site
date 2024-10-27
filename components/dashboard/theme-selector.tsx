@@ -1,26 +1,54 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Theme } from '@/types/theme';
+import { themes, Theme } from '@/lib/themes';
+
+type ThemeColorProperty = 
+  | "colors.background"
+  | "colors.foreground"
+  | "colors.card"
+  | "colors.card-foreground"
+  | "colors.primary"
+  | "colors.primary-foreground"
+  | "colors.secondary"
+  | "colors.button"
+  | "colors.button-foreground"
+  | "colors.tag";
 
 interface ThemeSelectorProps {
-  currentTheme: string;
-  presetThemes: Record<string, Theme>;
-  onThemeChange: (themeName: string) => void;
+  currentTheme: Theme;
+  onThemeChange: (theme: Theme) => void;
 }
 
-export function ThemeSelector({ currentTheme, presetThemes, onThemeChange }: ThemeSelectorProps) {
+export function ThemeSelector({ currentTheme, onThemeChange }: ThemeSelectorProps) {
+  const handleThemeSelect = (themeName: string) => {
+    const selectedTheme = themes[themeName as keyof typeof themes];
+    if (selectedTheme) {
+      onThemeChange(selectedTheme);
+    }
+  };
+
   return (
-    <Select onValueChange={onThemeChange} defaultValue={currentTheme}>
+    <Select 
+      value={currentTheme.name.toLowerCase()}
+      onValueChange={handleThemeSelect} 
+    >
       <SelectTrigger>
-        <SelectValue placeholder="Select a preset theme" />
+        <SelectValue placeholder="Select a preset theme">
+          {currentTheme.name}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {Object.entries(presetThemes).map(([key, theme]) => (
-          <SelectItem key={key} value={key}>
+        {Object.entries(themes).map(([key, theme]) => (
+          <SelectItem key={key} value={key.toLowerCase()}>
             {theme.name}
           </SelectItem>
         ))}
       </SelectContent>
     </Select>
   );
+}
+
+interface ThemeCustomizerProps {
+  theme: Theme;
+  onThemeChange: (property: ThemeColorProperty, value: string) => void;
 }

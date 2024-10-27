@@ -8,9 +8,12 @@ import { useUser } from '@/lib/hooks/useUser';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { PortfolioPreview } from '@/components/dashboard/PortfolioPreview';
 import { RefreshPortfolio } from '@/components/dashboard/refresh-portfolio';
-import { Theme, themes } from '@/lib/themes';
+import { Theme, themes, ThemeColors } from '@/lib/themes';
 import { Project } from '@/types/project';
 import { Portfolio } from '@/types/portfolio';
+
+// Update the type definition
+type ThemeProperty = keyof Theme | `colors.${keyof Theme['colors']}`;
 
 export default function DashboardPage() {
   const { user, loading } = useUser();
@@ -76,7 +79,7 @@ export default function DashboardPage() {
     }
   }, [user, fetchUserData, fetchPortfolioData]);
 
-  const handleThemeChange = (property: keyof Theme | `colors.${keyof Theme['colors']}`, value: string) => {
+  const handleThemeChange = (property: ThemeProperty, value: string) => {
     setCustomTheme(prevTheme => {
       if (property.startsWith('colors.')) {
         const colorKey = property.split('.')[1] as keyof Theme['colors'];
@@ -87,17 +90,11 @@ export default function DashboardPage() {
             [colorKey]: value,
           },
         };
-      } else if (property === 'font') {
-        return {
-          ...prevTheme,
-          font: value,
-        };
-      } else {
-        return {
-          ...prevTheme,
-          [property]: value,
-        };
       }
+      return {
+        ...prevTheme,
+        [property]: value,
+      };
     });
   };
 
@@ -224,14 +221,32 @@ export default function DashboardPage() {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleThemeSelect = (newTheme: Theme) => {
+    setCustomTheme(newTheme);
+  };
+
+  // Add these handler functions
+  const handleButtonIconColorChange = (color: string) => {
+    handleThemeChange('colors.button-foreground', color);
+  };
+
+  const handleAccentTextColorChange = (color: string) => {
+    handleThemeChange('colors.primary', color);
+  };
+
+  const handleLanguageTagColorChange = (color: string) => {
+    handleThemeChange('colors.tag', color);
+  };
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar
         theme={customTheme}
         onThemeChange={handleThemeChange}
-        onButtonIconColorChange={(color) => handleThemeChange('colors.button-foreground', color)}
-        onAccentTextColorChange={(color) => handleThemeChange('colors.primary', color)}
-        onLanguageTagColorChange={(color) => handleThemeChange('colors.tag', color)}
+        onThemeSelect={handleThemeSelect}
+        onButtonIconColorChange={handleButtonIconColorChange}
+        onAccentTextColorChange={handleAccentTextColorChange}
+        onLanguageTagColorChange={handleLanguageTagColorChange}
         socialLinks={socialLinks}
         onSocialLinksChange={handleSocialLinksChange}
         personalDomain={personalDomain}

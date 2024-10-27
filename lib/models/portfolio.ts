@@ -1,6 +1,17 @@
 import mongoose from 'mongoose';
 import { Portfolio } from '@/types/portfolio';
 
+// Add or update the repository interface in the Portfolio model
+interface RepositoryData {
+  name: string;
+  description: string | null;
+  url: string;
+  languages: string[];  // Make sure this exists
+  stars: number;
+  forks: number;
+  homepage?: string;
+}
+
 const portfolioSchema = new mongoose.Schema<Portfolio>({
   _id: String,
   userId: String,
@@ -20,9 +31,10 @@ const portfolioSchema = new mongoose.Schema<Portfolio>({
         name: String,
         description: String,
         url: String,
+        languages: [String],  // Make sure this is defined
         stars: Number,
         forks: Number,
-        language: String,
+        homepage: String,
       }],
     },
     skills: {

@@ -1,3 +1,11 @@
+interface ProjectData {
+  name: string;
+  description: string;
+  url: string;
+  image: string;
+  languages: string[];
+}
+
 export interface Portfolio {
   _id: string;
   userId: string;
@@ -17,9 +25,10 @@ export interface Portfolio {
         name: string;
         description: string;
         url: string;
+        languages: string[];
         stars: number;
         forks: number;
-        language: string;
+        homepage?: string;  // Add this line
       }>;
     };
     skills: {
@@ -28,12 +37,7 @@ export interface Portfolio {
     };
     projects: {
       status: string;
-      data?: Array<{
-        name: string;
-        description: string;
-        url: string;
-        image: string;
-      }>;
+      data?: ProjectData[];
     };
   };
   // Add other portfolio properties as needed

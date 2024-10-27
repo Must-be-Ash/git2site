@@ -1,86 +1,84 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { exchangeCodeForAccessToken, getGithubUser } from "@/lib/github";
 import { connectDB } from "@/lib/db";
-import { User, UserDocument } from "@/lib/models/user";
-import { getGithubUser, exchangeCodeForAccessToken } from "@/lib/github";
-import { createJWT } from "@/lib/auth";
+import { User } from "@/lib/models/user";
 
-export async function GET(request: NextRequest) {
-  console.log("GitHub OAuth callback initiated");
-  const startTime = Date.now();
+// Add this export to mark the route as dynamic
+export const dynamic = 'force-dynamic';
 
-  const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
-
-  if (!code) {
-    console.error("No code provided in callback");
-    return NextResponse.json({ error: "No code provided" }, { status: 400 });
-  }
-
+export async function GET(request: Request) {
   try {
-    const db = await connectDB();
+    const { searchParams } = new URL(request.url);
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
 
-    const accessToken = await exchangeCodeForAccessToken(code);
-    const githubUser = await getGithubUser(accessToken);
-    console.log("GitHub user data received", { id: githubUser.id, login: githubUser.login });
+    if (!code) {
+      console.error("No code provided in callback");
+      return NextResponse.redirect(new URL("/login?error=no_code", request.url));
+    }
 
-    let user: UserDocument | null = await User.findOne({ githubId: githubUser.id });
-    let isNewUser = false;
+    // Exchange code for access token
+    let accessToken;
+    try {
+      accessToken = await exchangeCodeForAccessToken(code);
+      console.log("Successfully obtained access token");
+    } catch (error) {
+      console.error("Token exchange error:", error);
+      return NextResponse.redirect(new URL("/login?error=token_exchange", request.url));
+    }
 
-    if (user) {
-      // Update existing user
-      user.username = githubUser.login;
-      user.name = githubUser.name || githubUser.login;
-      user.email = githubUser.email || '';
-      user.avatar = githubUser.avatar_url || '';
-      user.githubAccessToken = accessToken;
-      await user.save();
-    } else {
-      // Create new user
-      isNewUser = true;
-      let username = githubUser.login;
-      let counter = 1;
-      
-      // Check if username exists and append a number if it does
-      while (await User.findOne({ username })) {
-        username = `${githubUser.login}${counter}`;
-        counter++;
-      }
+    // Get GitHub user data
+    let githubUser;
+    try {
+      githubUser = await getGithubUser(accessToken);
+      console.log("Successfully fetched GitHub user:", githubUser.login);
+    } catch (error) {
+      console.error("GitHub user fetch error:", error);
+      return NextResponse.redirect(new URL("/login?error=github_user", request.url));
+    }
 
-      const newUser = new User({
-        githubId: githubUser.id,
-        username: username,
-        name: githubUser.name || githubUser.login,
-        email: githubUser.email || '',
-        avatar: githubUser.avatar_url || '',
-        githubAccessToken: accessToken,
+    // Connect to MongoDB
+    try {
+      await connectDB();
+      console.log("Successfully connected to database");
+    } catch (error) {
+      console.error("Database connection error:", error);
+      return NextResponse.redirect(new URL("/login?error=database", request.url));
+    }
+
+    // Find or create user
+    try {
+      const user = await User.findOneAndUpdate(
+        { githubId: githubUser.id },
+        {
+          githubId: githubUser.id,
+          username: githubUser.login,
+          name: githubUser.name || githubUser.login,
+          email: githubUser.email,
+          avatarUrl: githubUser.avatar_url,
+          githubAccessToken: accessToken,
+        },
+        { upsert: true, new: true }
+      );
+
+      // Set session cookie
+      const cookieStore = cookies();
+      cookieStore.set("userId", user._id.toString(), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 7, // 1 week
       });
-      user = await newUser.save();
+
+      console.log("Successfully created/updated user and set cookie");
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    } catch (error) {
+      console.error("User creation/update error:", error);
+      return NextResponse.redirect(new URL("/login?error=user_creation", request.url));
     }
-
-    if (!user) {
-      throw new Error("Failed to create or update user");
-    }
-
-    const token = await createJWT(user._id.toString());
-
-    cookies().set("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 86400, // 1 day
-      path: "/",
-    });
-
-    console.log(`GitHub OAuth callback completed in ${Date.now() - startTime}ms`);
-
-    const baseUrl = process.env.NODE_ENV === "production" 
-      ? "https://www.git2site.pro" 
-      : "http://localhost:3000";
-    const redirectUrl = `${baseUrl}/dashboard`;
-    return NextResponse.redirect(redirectUrl);
   } catch (error) {
-    console.error("Error in GitHub callback:", error);
-    return NextResponse.json({ error: "Authentication failed" }, { status: 500 });
+    console.error("Unhandled error in GitHub callback:", error);
+    return NextResponse.redirect(new URL("/login?error=auth_failed", request.url));
   }
 }

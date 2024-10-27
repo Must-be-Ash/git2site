@@ -11,30 +11,12 @@ const repositorySchema = new mongoose.Schema({
     required: true,
   },
   description: String,
-  url: {
-    type: String,
-    required: true,
-  },
+  url: String,
   homepage: String,
-  language: String,
-  stars: {
-    type: Number,
-    default: 0,
-  },
-  topics: [String],
-  isFeatured: {
-    type: Boolean,
-    default: false,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
   thumbnailUrl: String,
-});
+  languages: [String],
+  stars: Number,
+  forks: Number,
+}, { timestamps: true });
 
 export const Repository = mongoose.models.Repository || mongoose.model('Repository', repositorySchema);

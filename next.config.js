@@ -1,29 +1,40 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    // !! WARN !!
-    ignoreBuildErrors: true,
-  },
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'avatars.githubusercontent.com',
+        hostname: 'github.com'
       },
       {
         protocol: 'https',
-        hostname: 'raw.githubusercontent.com',
+        hostname: 'avatars.githubusercontent.com'
       },
-      // Add other domains as needed
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com'
+      },
+      {
+        protocol: 'https',
+        hostname: 'user-images.githubusercontent.com'
+      },
+      {
+        protocol: 'https',
+        hostname: '*.vercel.app'
+      },
+      {
+        protocol: 'https',
+        hostname: 'vercel.app'
+      },
+      // Add a wildcard pattern for all subdomains
+      {
+        protocol: 'https',
+        hostname: '**.vercel.app'
+      }
     ],
-  },
-  experimental: {
-    optimizeCss: true,
-    scrollRestoration: true,
+    // Allow domains with dynamic subdomains
+    domains: ['vercel.app'],
   },
   output: 'standalone',
 };
