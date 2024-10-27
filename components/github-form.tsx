@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Github, Loader2 } from 'lucide-react';
@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation';
 export function GithubForm() {
   const [githubUrl, setGithubUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -17,15 +19,16 @@ export function GithubForm() {
     setLoading(true);
 
     try {
-      const username = extractGithubUsername(githubUrl);
-      if (!username) {
+      const extractedUsername = extractGithubUsername(githubUrl);
+      if (!extractedUsername) {
         throw new Error('Invalid GitHub URL or username');
       }
+      setUsername(extractedUsername);
 
       const response = await fetch('/api/portfolio/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username: extractedUsername }),
       });
 
       if (!response.ok) {
@@ -33,15 +36,45 @@ export function GithubForm() {
         throw new Error(error.error || 'Failed to generate portfolio');
       }
 
-      const data = await response.json();
-      toast.success('Portfolio generated successfully!');
-      router.push(`/${username}`);
+      toast.success('Portfolio generation started!');
+      setGenerationStatus('started');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to generate portfolio');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    if (generationStatus === 'started' && username) {
+      intervalId = setInterval(async () => {
+        try {
+          const response = await fetch('/api/portfolio/status');
+          if (response.ok) {
+            const data = await response.json();
+            setGenerationStatus(data.status);
+
+            if (data.status === 'completed') {
+              clearInterval(intervalId);
+              toast.success('Portfolio generation completed!');
+              router.push(`/${username}`);
+            } else if (data.status === 'failed') {
+              clearInterval(intervalId);
+              toast.error('Portfolio generation failed. Please try again.');
+            }
+          }
+        } catch (error) {
+          console.error('Error checking portfolio status:', error);
+        }
+      }, 5000); // Check every 5 seconds
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [generationStatus, router, username]);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

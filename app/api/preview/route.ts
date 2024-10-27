@@ -1,42 +1,45 @@
+import { NextRequest, NextResponse } from 'next/server';
 import puppeteer from 'puppeteer';
-import { NextResponse } from 'next/server';
 
-export async function POST(req: Request) {
+export async function GET(req: NextRequest) {
+  const url = req.nextUrl.searchParams.get('url');
+  
+  if (!url) {
+    return NextResponse.json({ error: 'URL parameter is required' }, { status: 400 });
+  }
+
   try {
-    const { url } = await req.json();
-
-    if (!url) {
-      return NextResponse.json({ error: 'URL is required' }, { status: 400 });
-    }
-
+    // Launch browser
     const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      headless: true,
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
+    // Create new page
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 630 });
-    
-    await page.goto(url, { 
-      waitUntil: 'networkidle0',
-      timeout: 30000 
-    });
 
+    // Navigate to URL
+    await page.goto(url, { waitUntil: 'networkidle0' });
+
+    // Take screenshot
     const screenshot = await page.screenshot({
-      type: 'png',
+      type: 'jpeg',
+      quality: 80,
       encoding: 'base64'
     });
 
+    // Close browser
     await browser.close();
 
-    return NextResponse.json({ 
-      preview: `data:image/png;base64,${screenshot}`
+    // Return the screenshot as base64
+    return NextResponse.json({
+      preview: `data:image/jpeg;base64,${screenshot}`
     });
-
   } catch (error) {
-    console.error('Preview generation error:', error);
+    console.error('Error generating preview:', error);
     return NextResponse.json(
-      { error: 'Failed to generate preview' }, 
+      { error: 'Failed to generate preview' },
       { status: 500 }
     );
   }

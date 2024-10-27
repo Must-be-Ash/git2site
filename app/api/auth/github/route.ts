@@ -1,16 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: Request) {
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  const redirectUri = "https://www.git2site.pro/api/auth/github/callback";
-  const scope = "read:user repo";
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID!;
 
-  if (!clientId) {
-    console.error("GITHUB_CLIENT_ID is not set");
-    return NextResponse.json({ error: "OAuth configuration error" }, { status: 500 });
-  }
+export async function GET(request: NextRequest) {
+  const baseUrl = process.env.NODE_ENV === "production" 
+    ? "https://www.git2site.pro" 
+    : "http://localhost:3000";
 
-  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}`;
+  const callbackUrl = `${baseUrl}/api/auth/github/callback`;
+
+  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(callbackUrl)}`;
 
   return NextResponse.redirect(githubAuthUrl);
 }

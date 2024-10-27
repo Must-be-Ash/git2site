@@ -7,6 +7,9 @@ const ThrottledOctokit = Octokit.plugin(throttling, restEndpointMethods);
 
 type ThrottledOctokitType = InstanceType<typeof ThrottledOctokit>;
 
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID!;
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET!;
+
 export const createOctokit = (accessToken: string) => new ThrottledOctokit({
   auth: accessToken,
   throttle: {
@@ -96,11 +99,7 @@ export async function fetchUserProfile(username: string, accessToken: string): P
   }
 }
 
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID!;
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET!;
-
-export async function getGithubUser(code: string) {
-  console.log("Exchanging code for access token");
+export async function exchangeCodeForAccessToken(code: string): Promise<string> {
   const tokenResponse = await axios.post(
     'https://github.com/login/oauth/access_token',
     {
@@ -111,25 +110,18 @@ export async function getGithubUser(code: string) {
     {
       headers: { Accept: 'application/json' },
     }
-  ).catch(error => {
-    console.error("Error exchanging code for access token:", error.response?.data || error.message);
-    throw new Error("Failed to exchange code for access token");
-  });
+  );
 
   const accessToken = tokenResponse.data.access_token;
   if (!accessToken) {
-    console.error("No access token received from GitHub");
     throw new Error("No access token received from GitHub");
   }
 
-  console.log("Access token received, fetching user data");
-  const userResponse = await axios.get('https://api.github.com/user', {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  }).catch(error => {
-    console.error("Error fetching user data from GitHub:", error.response?.data || error.message);
-    throw new Error("Failed to fetch user data from GitHub");
-  });
+  return accessToken;
+}
 
-  console.log("User data fetched successfully");
-  return userResponse.data;
+export async function getGithubUser(accessToken: string) {
+  const octokit = createOctokit(accessToken);
+  const { data: user } = await octokit.users.getAuthenticated();
+  return user;
 }

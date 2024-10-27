@@ -44,3 +44,6 @@ export async function connectDB(): Promise<typeof mongoose> {
 
   return global.mongooseConnection.conn;
 }
+
+// Export the database connection
+export const db = global.mongooseConnection.conn?.connection.db;

@@ -94,7 +94,7 @@ createPortfolio('yourGithubUsername');
   }, [startAnimation])
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="min-h-screen flex flex-col bg-black text-white">
       <header
         className={`fixed w-full z-50 transition-all duration-300 ${
           isHeaderVisible ? 'bg-background shadow-lg py-4' : 'bg-transparent py-6'
@@ -166,7 +166,7 @@ createPortfolio('yourGithubUsername');
                 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight text-foreground"
               >
                 Turn Your GitHub Into a{' '}
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#ff8533] to-[#ffc0fa]">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#ff8533] to-[#ffbf00]">
                   Stunning Portfolio
                 </span>
               </motion.h1>
@@ -183,7 +183,7 @@ createPortfolio('yourGithubUsername');
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
               >
-                <Button asChild className="bg-primary hover:bg-secondary text-white px-8 py-3 text-lg">
+                <Button asChild className="bg-white text-black hover:bg-[#ff8533] px-8 py-3 text-lg">
                   <Link href="/api/auth/github">Login with GitHub</Link>
                 </Button>
               </motion.div>

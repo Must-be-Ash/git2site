@@ -10,6 +10,7 @@ import { PortfolioPreview } from '@/components/dashboard/PortfolioPreview';
 import { RefreshPortfolio } from '@/components/dashboard/refresh-portfolio';
 import { Theme, themes } from '@/lib/themes';
 import { Project } from '@/types/project';
+import { Portfolio } from '@/types/portfolio';
 
 export default function DashboardPage() {
   const { user, loading } = useUser();
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [socialLinks, setSocialLinks] = useState({ linkedinUrl: '', twitterUrl: '', emailAddress: '' });
   const [personalDomain, setPersonalDomain] = useState('');
+  const [portfolioData, setPortfolioData] = useState<Portfolio | undefined>(undefined);
 
   const fetchUserData = useCallback(async () => {
     try {
@@ -52,11 +54,27 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchPortfolioData = useCallback(async () => {
+    try {
+      const response = await fetch('/api/portfolio/status');
+      if (response.ok) {
+        const data = await response.json();
+        setPortfolioData(data.data);
+        setGenerationProgress(data.progress);
+      } else {
+        console.error('Failed to fetch portfolio data');
+      }
+    } catch (error) {
+      console.error('Error fetching portfolio data:', error);
+    }
+  }, []);
+
   useEffect(() => {
     if (user) {
       fetchUserData();
+      fetchPortfolioData();
     }
-  }, [user, fetchUserData]);
+  }, [user, fetchUserData, fetchPortfolioData]);
 
   const handleThemeChange = (property: keyof Theme | `colors.${keyof Theme['colors']}`, value: string) => {
     setCustomTheme(prevTheme => {
@@ -152,18 +170,19 @@ export default function DashboardPage() {
     }
   };
 
-  const pollGenerationStatus = async () => {
+  const pollGenerationStatus = useCallback(async (): Promise<() => void> => {
     const pollInterval = setInterval(async () => {
       try {
         const response = await fetch('/api/portfolio/status');
         if (response.ok) {
-          const { status, progress } = await response.json();
-          setGenerationProgress(progress);
-          if (status === 'completed') {
+          const data = await response.json();
+          setGenerationProgress(data.progress);
+          setPortfolioData(data.data);
+          if (data.status === 'completed') {
             clearInterval(pollInterval);
             toast.success('Portfolio generation completed');
             setGenerationProgress(0);
-          } else if (status === 'failed') {
+          } else if (data.status === 'failed') {
             clearInterval(pollInterval);
             toast.error('Portfolio generation failed');
             setGenerationProgress(0);
@@ -173,7 +192,25 @@ export default function DashboardPage() {
         console.error('Error polling generation status:', error);
       }
     }, 5000); // Poll every 5 seconds
-  };
+
+    return () => clearInterval(pollInterval);
+  }, []);
+
+  useEffect(() => {
+    let cancelPolling: (() => void) | undefined;
+
+    if (generatingPortfolio) {
+      pollGenerationStatus().then((cancelFn) => {
+        cancelPolling = cancelFn;
+      });
+    }
+
+    return () => {
+      if (cancelPolling) {
+        cancelPolling();
+      }
+    };
+  }, [generatingPortfolio, pollGenerationStatus]);
 
   const handleSocialLinksChange = (field: string, value: string) => {
     setSocialLinks(prev => ({ ...prev, [field]: value }));
@@ -226,6 +263,7 @@ export default function DashboardPage() {
           profile={profile}
           socialLinks={socialLinks}
           personalDomain={personalDomain}
+          portfolioData={portfolioData}
         />
       </div>
     </div>

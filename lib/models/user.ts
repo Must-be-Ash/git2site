@@ -1,14 +1,20 @@
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
+  githubId: {
+    type: String,
+    required: true,
+    unique: true,
+  },
   username: {
     type: String,
     required: true,
     unique: true,
   },
   name: String,
-  bio: String,
+  email: String,
   avatar: String,
+  bio: String,
   isVerified: {
     type: Boolean,
     default: false,
@@ -38,11 +44,17 @@ const userSchema = new mongoose.Schema({
   githubAccessToken: String,
 }, { timestamps: true });
 
-export const User = mongoose.models.User || mongoose.model('User', userSchema);
-
-export interface User {
-  _id: string;
+export interface UserDocument extends mongoose.Document {
+  _id: mongoose.Types.ObjectId;
+  githubId: string;
+  username: string;
   name: string;
   email: string;
-  // Add other user properties as needed
+  avatar: string;
+  githubAccessToken: string;
+  // Add other properties as needed
 }
+
+export const User = mongoose.models.User || mongoose.model<UserDocument>('User', userSchema);
+
+export type UserModel = mongoose.Model<UserDocument>;
