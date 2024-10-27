@@ -27,19 +27,15 @@ interface PortfolioPreviewProps {
 
 export function PortfolioPreview({ projects, theme, profile, socialLinks, personalDomain, portfolioData }: PortfolioPreviewProps) {
   return (
-    <div className="flex-1 overflow-auto p-4" style={{
-      backgroundColor: theme.colors.background,
-      color: theme.colors.foreground,
-      fontFamily: theme.font
-    }}>
-      <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+    <div className="flex-1 overflow-auto p-4">
+      <div className="max-w-4xl mx-auto rounded-lg overflow-hidden" style={{
+        backgroundColor: theme.colors.background,
+        fontFamily: theme.font
+      }}>
         {portfolioData ? (
           <>
             {/* Profile Section */}
-            <div className="mb-8 text-center p-6" style={{
-              backgroundColor: theme.colors.card,
-              color: theme.colors.foreground
-            }}>
+            <div className="mb-8 text-center p-6">
               {portfolioData.sections.profile.data?.avatar && (
                 <div className="relative w-24 h-24 mx-auto mb-4">
                   <Image
@@ -103,34 +99,6 @@ export function PortfolioPreview({ projects, theme, profile, socialLinks, person
                 )}
               </div>
             </div>
-
-            {/* Skills Section */}
-            {portfolioData.sections.skills.data && (
-              <div className="mb-8 p-6" style={{
-                backgroundColor: theme.colors.card,
-                color: theme.colors.foreground
-              }}>
-                <h2 className="text-2xl font-bold mb-4" style={{
-                  color: theme.colors.primary,
-                  fontFamily: theme.font
-                }}>Skills</h2>
-                <div className="flex flex-wrap gap-2">
-                  {portfolioData.sections.skills.data.map((skill, index) => (
-                    <span 
-                      key={index} 
-                      className="px-2 py-1 rounded" 
-                      style={{
-                        backgroundColor: theme.colors.tag,
-                        color: theme.colors.primary,
-                        fontFamily: theme.font
-                      }}
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Projects Section */}
             {portfolioData.sections.repositories.data && (
