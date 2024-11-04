@@ -13,7 +13,7 @@ export async function GET(request: Request) {
 
   // Determine if we're in production based on the request URL
   const isProduction = request.url.includes('git2site.pro');
-  const baseUrl = isProduction ? 'http://git2site.pro' : 'http://localhost:3000';
+  const baseUrl = isProduction ? 'https://git2site.pro' : 'http://localhost:3000';
   
   const params = new URLSearchParams({
     client_id: GITHUB_CLIENT_ID,
