@@ -157,7 +157,7 @@ export async function fetchUserProfile(username: string, accessToken: string): P
 export async function exchangeCodeForAccessToken(code: string): Promise<string> {
   // Determine if we're in production based on the request headers or environment
   const baseUrl = process.env.NODE_ENV === 'production' 
-    ? 'http://git2site.pro' 
+    ? 'https://git2site.pro' 
     : 'http://localhost:3000';
 
   const response = await fetch('https://github.com/login/oauth/access_token', {
