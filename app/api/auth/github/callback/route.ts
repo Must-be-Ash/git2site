@@ -8,6 +8,11 @@ import { User } from "@/lib/models/user";
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
+  // Get the actual host from the request
+  const host = request.headers.get('host') || 'git2site.pro';
+  const protocol = host.includes('localhost') ? 'http' : 'https';
+  const baseUrl = `${protocol}://${host}`;
+
   try {
     console.log("=== GitHub Callback Process Started ===");
     const { searchParams } = new URL(request.url);
@@ -15,7 +20,7 @@ export async function GET(request: Request) {
 
     if (!code) {
       console.error("No code provided in callback");
-      return NextResponse.redirect('https://www.git2site.pro/login?error=no_code');
+      return NextResponse.redirect(`${baseUrl}/login?error=no_code`);
     }
 
     // Exchange code for access token
@@ -25,7 +30,7 @@ export async function GET(request: Request) {
       console.log("Successfully obtained new access token");
     } catch (error) {
       console.error("Token exchange error:", error);
-      return NextResponse.redirect('https://www.git2site.pro/login?error=token_exchange');
+      return NextResponse.redirect(`${baseUrl}/login?error=token_exchange`);
     }
 
     // Get GitHub user data
@@ -35,7 +40,7 @@ export async function GET(request: Request) {
       console.log("Successfully fetched GitHub user:", githubUser.login);
     } catch (error) {
       console.error("GitHub user fetch error:", error);
-      return NextResponse.redirect('https://www.git2site.pro/login?error=github_user');
+      return NextResponse.redirect(`${baseUrl}/login?error=github_user`);
     }
 
     // Connect to MongoDB
@@ -44,7 +49,7 @@ export async function GET(request: Request) {
       console.log("Successfully connected to database");
     } catch (error) {
       console.error("Database connection error:", error);
-      return NextResponse.redirect('https://www.git2site.pro/login?error=database');
+      return NextResponse.redirect(`${baseUrl}/login?error=database`);
     }
 
     // Find or create user
@@ -80,13 +85,13 @@ export async function GET(request: Request) {
       });
 
       console.log("=== GitHub Callback Process Completed ===");
-      return NextResponse.redirect('https://www.git2site.pro/dashboard');
+      return NextResponse.redirect(`${baseUrl}/dashboard`);
     } catch (error) {
       console.error("User update error:", error);
-      return NextResponse.redirect('https://www.git2site.pro/login?error=user_creation');
+      return NextResponse.redirect(`${baseUrl}/login?error=user_creation`);
     }
   } catch (error) {
     console.error("=== GitHub Callback Process Failed ===", error);
-    return NextResponse.redirect('https://www.git2site.pro/login?error=auth_failed');
+    return NextResponse.redirect(`${baseUrl}/login?error=auth_failed`);
   }
 }
