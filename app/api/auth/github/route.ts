@@ -1,16 +1,13 @@
 import { redirect } from 'next/navigation'
 
-// Add this export to mark the route as dynamic
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  const baseUrl = process.env.NODE_ENV === 'production' 
-    ? 'https://www.git2site.pro'
-    : 'http://localhost:3000'
+  const redirectUri = 'https://www.git2site.pro/api/auth/github/callback'
 
   const params = new URLSearchParams({
     client_id: process.env.GITHUB_CLIENT_ID!,
-    redirect_uri: `${baseUrl}/api/auth/github/callback`,
+    redirect_uri: redirectUri,
     scope: 'read:user user:email repo',
     state: Math.random().toString(36).substring(7),
   })
