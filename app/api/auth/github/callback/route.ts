@@ -9,9 +9,9 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    console.log("=== GitHub Callback Process Started ===");
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
-    const state = searchParams.get("state");
 
     if (!code) {
       console.error("No code provided in callback");
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     let accessToken;
     try {
       accessToken = await exchangeCodeForAccessToken(code);
-      console.log("Successfully obtained access token");
+      console.log("Successfully obtained new access token");
     } catch (error) {
       console.error("Token exchange error:", error);
       return NextResponse.redirect(new URL("/login?error=token_exchange", request.url));
@@ -57,28 +57,36 @@ export async function GET(request: Request) {
           name: githubUser.name || githubUser.login,
           email: githubUser.email,
           avatarUrl: githubUser.avatar_url,
-          githubAccessToken: accessToken,
+          githubAccessToken: accessToken, // Store the new token
+          updatedAt: new Date(),
         },
         { upsert: true, new: true }
       );
 
-      // Set session cookie
+      console.log("User updated with new token:", {
+        userId: user._id,
+        username: user.username,
+        tokenUpdated: true
+      });
+
+      // Set cookies
       const cookieStore = cookies();
       cookieStore.set("userId", user._id.toString(), {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 60 * 60 * 24 * 7, // 1 week
+        path: '/',
       });
 
-      console.log("Successfully created/updated user and set cookie");
+      console.log("=== GitHub Callback Process Completed ===");
       return NextResponse.redirect(new URL("/dashboard", request.url));
     } catch (error) {
-      console.error("User creation/update error:", error);
+      console.error("User update error:", error);
       return NextResponse.redirect(new URL("/login?error=user_creation", request.url));
     }
   } catch (error) {
-    console.error("Unhandled error in GitHub callback:", error);
+    console.error("=== GitHub Callback Process Failed ===", error);
     return NextResponse.redirect(new URL("/login?error=auth_failed", request.url));
   }
 }

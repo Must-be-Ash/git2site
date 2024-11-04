@@ -85,11 +85,20 @@ async function generateSection(userId: string, section: string): Promise<void> {
       );
       break;
     case 'repositories':
-      const repos = await fetchUserRepositories(user.githubAccessToken);
-      await PortfolioService.updateOne(
-        { userId },
-        { $set: { 'sections.repositories.data': repos } }
-      );
+      if (user.selectedRepositories && user.selectedRepositories.length > 0) {
+        console.log(`Using ${user.selectedRepositories.length} selected repositories`);
+        await PortfolioService.updateOne(
+          { userId },
+          { $set: { 'sections.repositories.data': user.selectedRepositories } }
+        );
+      } else {
+        console.log('No selected repositories found, fetching all repositories');
+        const repos = await fetchUserRepositories(user.githubAccessToken);
+        await PortfolioService.updateOne(
+          { userId },
+          { $set: { 'sections.repositories.data': repos } }
+        );
+      }
       break;
     case 'skills':
       const skills = await generateUserSkills(user.githubAccessToken);

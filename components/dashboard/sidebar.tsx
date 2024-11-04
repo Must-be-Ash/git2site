@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { ThemeCustomizer } from './ThemeCustomizer';
 import { ColorPicker } from './color-picker';
@@ -6,8 +8,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ThemeSelector } from './theme-selector';
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useEffect, useState, useCallback } from "react";
+import { Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type ThemeProperty = keyof Theme | `colors.${keyof Theme['colors']}`;
+
+interface Repository {
+  name: string;
+  description: string;
+  isPrivate: boolean;
+  isSelected: boolean;
+}
 
 interface SidebarProps {
   theme: Theme;
@@ -46,8 +66,93 @@ export function Sidebar({
   profile,
   onProfileChange
 }: SidebarProps) {
+  const [repositories, setRepositories] = useState<Repository[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchRepositories();
+  }, []);
+
+  const fetchRepositories = async () => {
+    try {
+      console.log("Fetching repositories and selection state...");
+      setIsLoading(true);
+      const response = await fetch('/api/repositories');
+      if (!response.ok) throw new Error('Failed to fetch repositories');
+      
+      const data = await response.json();
+      console.log("Received repositories data:", {
+        total: data.repositories.length,
+        selected: data.repositories.filter((r: any) => r.isSelected).length
+      });
+      
+      setRepositories(data.repositories);
+    } catch (err) {
+      console.error("Error fetching repositories:", err);
+      setError(err instanceof Error ? err.message : 'Failed to load repositories');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleRepository = (repoName: string) => {
+    setRepositories(repos => 
+      repos.map(repo => 
+        repo.name === repoName 
+          ? { ...repo, isSelected: !repo.isSelected }
+          : repo
+      )
+    );
+  };
+
+  const handleSaveAll = useCallback(async () => {
+    console.log("=== Saving All User Preferences ===");
+    try {
+      const selectedRepos = repositories.filter(repo => repo.isSelected);
+      console.log("Selected repositories:", selectedRepos);
+
+      const response = await fetch('/api/user/preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          theme,
+          socialLinks,
+          personalDomain,
+          profile,
+          selectedRepositories: selectedRepos
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save preferences');
+      }
+
+      const result = await response.json();
+      console.log("Save response:", result);
+      console.log("Successfully saved all preferences including selected repositories");
+    } catch (error) {
+      console.error("Error saving preferences:", error);
+      setError('Failed to save preferences');
+    }
+  }, [repositories, theme, socialLinks, personalDomain, profile]);
+
+  useEffect(() => {
+    const saveButton = document.querySelector('button:has(.w-4.h-4.mr-2)');
+    if (saveButton) {
+      saveButton.addEventListener('click', handleSaveAll);
+    }
+    return () => {
+      if (saveButton) {
+        saveButton.removeEventListener('click', handleSaveAll);
+      }
+    };
+  }, [handleSaveAll]);
+
   return (
-    <div className="w-64 bg-muted p-4 overflow-y-auto">
+    <div className="w-80 border-r bg-[#888888] p-6 space-y-6 overflow-y-auto">
       <h2 className="text-xl font-bold mb-4">Theme Customization</h2>
       
       {/* Add the ThemeSelector component */}
@@ -163,6 +268,50 @@ export function Sidebar({
           </div>
         </div>
       </div>
+
+      {/* Repository Selection Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Select Repositories</h3>
+        
+        {isLoading ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        ) : error ? (
+          <div className="text-red-500 text-sm">{error}</div>
+        ) : (
+          <div className="space-y-2">
+            {repositories.map((repo) => (
+              <div key={repo.name} className="flex text-white items-start space-x-2 p-2 rounded hover:bg-gray-100 hover:text-black">
+                <Checkbox
+                  id={repo.name}
+                  checked={repo.isSelected}
+                  onCheckedChange={() => toggleRepository(repo.name)}
+                />
+                <div className="space-y-1">
+                  <label
+                    htmlFor={repo.name}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {repo.name} {repo.isPrivate && <span className="text-xs text-[#484848]">(Private)</span>}
+                  </label>
+                  {repo.description && (
+                    <p className="text-xs text-[#4d4d4d]">{repo.description}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Save Button */}
+      <Button 
+        className="w-full"
+        onClick={handleSaveAll}
+      >
+        Save Changes
+      </Button>
     </div>
   );
 }

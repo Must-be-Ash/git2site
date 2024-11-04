@@ -42,6 +42,16 @@ const userSchema = new mongoose.Schema({
   },
   personalDomain: String,
   githubAccessToken: String,
+  selectedRepositories: [{
+    name: String,
+    description: String,
+    isPrivate: Boolean,
+    url: String,
+    homepage: String,
+    stars: Number,
+    forks: Number,
+    languages: [String]
+  }],
 }, { timestamps: true });
 
 // Add this interface if not already present
@@ -80,6 +90,16 @@ export interface UserDocument extends mongoose.Document {
   avatar: string;
   githubAccessToken: string;
   preferences?: UserPreferences;
+  selectedRepositories?: Array<{
+    name: string;
+    description: string;
+    isPrivate: boolean;
+    url: string;
+    homepage?: string;
+    stars: number;
+    forks: number;
+    languages: string[];
+  }>;
   // Add other properties as needed
 }
 

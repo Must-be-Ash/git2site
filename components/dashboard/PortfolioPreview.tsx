@@ -47,11 +47,11 @@ export function PortfolioPreview({ projects, theme, profile, socialLinks, person
           <>
             {/* Profile Section */}
             <div className="mb-8 text-center p-6">
-              {serializedPortfolioData.sections.profile.data?.avatar && (
+              {profile.avatarUrl && (
                 <div className="relative w-24 h-24 mx-auto mb-4">
                   <Image
-                    src={serializedPortfolioData.sections.profile.data.avatar}
-                    alt={serializedPortfolioData.sections.profile.data.name}
+                    src={profile.avatarUrl}
+                    alt={profile.name}
                     fill
                     className="rounded-full object-cover"
                     style={{
@@ -64,13 +64,13 @@ export function PortfolioPreview({ projects, theme, profile, socialLinks, person
                 color: theme.colors.primary,
                 fontFamily: theme.font
               }}>
-                {serializedPortfolioData.sections.profile.data?.name}
+                {profile.name}
               </h1>
               <p className="text-lg mb-4" style={{ 
                 color: theme.colors.foreground,
                 fontFamily: theme.font
               }}>
-                {serializedPortfolioData.sections.profile.data?.bio}
+                {profile.bio}
               </p>
               
               {/* Social Links */}
@@ -126,7 +126,8 @@ export function PortfolioPreview({ projects, theme, profile, socialLinks, person
                         stars: repo.stars,
                         forks: repo.forks,
                         // Only include homepage if it exists
-                        ...(repo.homepage && { homepage: repo.homepage })
+                        ...(repo.homepage && { homepage: repo.homepage }),
+                        isPrivate: repo.isPrivate || false
                       }}
                       projectData={serializedPortfolioData.sections.projects.data?.find(
                         project => project.name === repo.name
@@ -173,7 +174,8 @@ interface RepositoryCardProps {
     languages: string[];
     stars: number;
     forks: number;
-    homepage?: string;  // Add this
+    homepage?: string;
+    isPrivate: boolean;
   };
   projectData?: {
     name: string;
@@ -183,13 +185,9 @@ interface RepositoryCardProps {
 }
 
 function RepositoryCard({ repo, projectData, theme }: RepositoryCardProps) {
-  // Use homepage URL if available, otherwise use projectData.url
   const websiteUrl = repo.homepage || projectData?.url;
   const preview = usePreview(websiteUrl);
   const { previewUrl, isLoading, error } = preview;
-
-  // Use a fallback image when no preview is available
-  const imageUrl = previewUrl || '/placeholder-project.png'; // Make sure to add a placeholder image in your public folder
 
   return (
     <Card 
@@ -214,12 +212,25 @@ function RepositoryCard({ repo, projectData, theme }: RepositoryCardProps) {
               <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
               </div>
+            ) : error ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                <Image
+                  src="/placeholder-project.png"
+                  alt={`${repo.name} thumbnail`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
             ) : (
               <Image
-                src={imageUrl}
+                src={previewUrl || '/placeholder-project.png'}
                 alt={`${repo.name} thumbnail`}
                 fill
                 className="object-cover transition-opacity hover:opacity-80"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/placeholder-project.png';
+                }}
               />
             )}
           </div>
@@ -282,21 +293,23 @@ function RepositoryCard({ repo, projectData, theme }: RepositoryCardProps) {
           </Button>
         )}
         
-        {/* GitHub Repository Button */}
-        <Button 
-          variant={websiteUrl ? 'outline' : theme.buttonStyle} 
-          size="icon" 
-          asChild 
-          style={{
-            backgroundColor: websiteUrl ? 'transparent' : theme.colors.button,
-            color: websiteUrl ? theme.colors.button : theme.colors['button-foreground'],
-            borderColor: theme.colors.button
-          }}
-        >
-          <Link href={repo.url} target="_blank" rel="noopener noreferrer" aria-label="View GitHub repository">
-            <Github className="w-5 h-5" />
-          </Link>
-        </Button>
+        {/* GitHub Repository Button - Only show for public repos */}
+        {!repo.isPrivate && (
+          <Button 
+            variant={websiteUrl ? 'outline' : theme.buttonStyle} 
+            size="icon" 
+            asChild 
+            style={{
+              backgroundColor: websiteUrl ? 'transparent' : theme.colors.button,
+              color: websiteUrl ? theme.colors.button : theme.colors['button-foreground'],
+              borderColor: theme.colors.button
+            }}
+          >
+            <Link href={repo.url} target="_blank" rel="noopener noreferrer" aria-label="View GitHub repository">
+              <Github className="w-5 h-5" />
+            </Link>
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

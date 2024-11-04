@@ -27,10 +27,25 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'vercel.app'
       },
-      // Add a wildcard pattern for all subdomains
       {
         protocol: 'https',
         hostname: '**.vercel.app'
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.microlink.io'
+      },
+      {
+        protocol: 'https',
+        hostname: '*.microlink.io'
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.urlbox.io',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.urlbox.io',
       }
     ],
     // Allow domains with dynamic subdomains

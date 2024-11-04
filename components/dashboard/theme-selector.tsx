@@ -37,7 +37,7 @@ export function ThemeSelector({ currentTheme, onThemeChange }: ThemeSelectorProp
           {currentTheme.name}
         </SelectValue>
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="bg-gray-100 z-2 text-black">
         {Object.entries(themes).map(([key, theme]) => (
           <SelectItem key={key} value={key.toLowerCase()}>
             {theme.name}

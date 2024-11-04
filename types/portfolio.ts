@@ -28,7 +28,8 @@ export interface Portfolio {
         languages: string[];
         stars: number;
         forks: number;
-        homepage?: string;  // Add this line
+        homepage?: string;
+        isPrivate: boolean;
       }>;
     };
     skills: {
@@ -40,5 +41,4 @@ export interface Portfolio {
       data?: ProjectData[];
     };
   };
-  // Add other portfolio properties as needed
 }

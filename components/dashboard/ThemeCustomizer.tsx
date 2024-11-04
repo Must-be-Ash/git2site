@@ -24,7 +24,7 @@ export function ThemeCustomizer({ theme, onThemeChange }: ThemeCustomizerProps) 
           <SelectTrigger id="font-family">
             <SelectValue placeholder="Select font family" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-gray-100 z-2 text-black">
             <SelectItem value="Inter, sans-serif">Inter</SelectItem>
             <SelectItem value="Roboto, sans-serif">Roboto</SelectItem>
             <SelectItem value="Merriweather, serif">Merriweather</SelectItem>
@@ -42,10 +42,10 @@ export function ThemeCustomizer({ theme, onThemeChange }: ThemeCustomizerProps) 
           value={theme.cardStyle}
           onValueChange={(value) => onThemeChange('cardStyle', value)}
         >
-          <SelectTrigger id="card-style">
-            <SelectValue placeholder="Select card style" />
+          <SelectTrigger id="card-style" >
+            <SelectValue placeholder="Select card style"/>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-gray-100 z-2 text-black">
             <SelectItem value="default">Default</SelectItem>
             <SelectItem value="bordered">Bordered</SelectItem>
             <SelectItem value="elevated">Elevated</SelectItem>
@@ -62,7 +62,7 @@ export function ThemeCustomizer({ theme, onThemeChange }: ThemeCustomizerProps) 
           <SelectTrigger id="button-style">
             <SelectValue placeholder="Select button style" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-gray-100 z-2 text-black">
             <SelectItem value="default">Default</SelectItem>
             <SelectItem value="outline">Outline</SelectItem>
             <SelectItem value="ghost">Ghost</SelectItem>

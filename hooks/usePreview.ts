@@ -16,7 +16,6 @@ export function usePreview(url?: string): PreviewResult {
   useEffect(() => {
     if (!url) {
       setIsLoading(false);
-      // Use placeholder image when no URL is provided
       setPreviewUrl('/placeholder-project.png');
       return;
     }
@@ -24,18 +23,43 @@ export function usePreview(url?: string): PreviewResult {
     const generatePreview = async () => {
       try {
         setIsLoading(true);
-        // For GitHub URLs, use placeholder image
-        if (url.includes('github.com')) {
-          setPreviewUrl('/placeholder-project.png');
-        } else {
-          // For other URLs, try to use them directly
-          setPreviewUrl(url);
+
+        // Use our own preview API endpoint
+        const response = await fetch('/api/preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate preview');
         }
+
+        const data = await response.json();
+        
+        if (data.preview) {
+          setPreviewUrl(data.preview);
+          console.log('Preview generated successfully for:', url);
+        } else {
+          // If preview generation fails, try to get og:image
+          const ogResponse = await fetch(`/api/og-image?url=${encodeURIComponent(url)}`);
+          const ogData = await ogResponse.json();
+          
+          if (ogData.imageUrl) {
+            setPreviewUrl(ogData.imageUrl);
+            console.log('Using og:image for:', url);
+          } else {
+            setPreviewUrl('/placeholder-project.png');
+            console.log('Using placeholder for:', url);
+          }
+        }
+
         setError(null);
       } catch (err) {
         console.error('Preview generation error:', err);
         setError(err instanceof Error ? err : new Error('Failed to generate preview'));
-        // Use placeholder image on error
         setPreviewUrl('/placeholder-project.png');
       } finally {
         setIsLoading(false);
