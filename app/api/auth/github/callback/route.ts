@@ -8,6 +8,10 @@ import { User } from "@/lib/models/user";
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
+  const baseUrl = process.env.NODE_ENV === 'production' 
+    ? 'https://www.git2site.pro'
+    : 'http://localhost:3000'
+
   try {
     console.log("=== GitHub Callback Process Started ===");
     const { searchParams } = new URL(request.url);
