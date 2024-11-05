@@ -186,8 +186,7 @@ interface RepositoryCardProps {
 
 function RepositoryCard({ repo, projectData, theme }: RepositoryCardProps) {
   const websiteUrl = repo.homepage || projectData?.url;
-  const preview = usePreview(websiteUrl);
-  const { previewUrl, isLoading, error } = preview;
+  const { previewUrl, isLoading, error } = usePreview(websiteUrl);
 
   return (
     <Card 
@@ -207,33 +206,42 @@ function RepositoryCard({ repo, projectData, theme }: RepositoryCardProps) {
     >
       <CardHeader className="p-0">
         <div className="relative w-full h-48">
-          <div className="w-full h-full relative">
-            {isLoading ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-              </div>
-            ) : error ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                <Image
-                  src="/placeholder-project.png"
-                  alt={`${repo.name} thumbnail`}
-                  fill
-                  className="object-cover"
+          {websiteUrl && (
+            <div className="w-full h-full relative">
+              {isLoading ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+                </div>
+              ) : error ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                  <Image
+                    src="/placeholder-project.png"
+                    alt={`${repo.name} thumbnail`}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <iframe
+                  src={websiteUrl}
+                  title={`${repo.name} preview`}
+                  className="w-full h-full border-none"
+                  sandbox="allow-same-origin allow-scripts"
+                  loading="lazy"
+                  onError={(e) => {
+                    const target = e.target as HTMLIFrameElement;
+                    target.style.display = 'none';
+                    // Show fallback image
+                    const img = document.createElement('img');
+                    img.src = '/placeholder-project.png';
+                    img.alt = `${repo.name} thumbnail`;
+                    img.className = 'w-full h-full object-cover';
+                    target.parentNode?.appendChild(img);
+                  }}
                 />
-              </div>
-            ) : (
-              <Image
-                src={previewUrl || '/placeholder-project.png'}
-                alt={`${repo.name} thumbnail`}
-                fill
-                className="object-cover transition-opacity hover:opacity-80"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/placeholder-project.png';
-                }}
-              />
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent className="p-6 flex-grow">
