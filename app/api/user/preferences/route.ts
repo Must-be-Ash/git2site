@@ -40,24 +40,40 @@ export async function POST(req: NextRequest) {
 
     const preferences = await req.json();
     console.log("Received preferences data:", {
-      theme: preferences.theme?.name,
-      selectedRepos: preferences.selectedRepositories?.map((r: any) => r.name)
+      theme: preferences.theme,
+      selectedRepos: preferences.selectedRepositories?.length || 0
     });
 
     await connectDB();
+    
+    // Create update object with only defined values
+    const updateData: any = {};
+    
+    if (preferences.theme !== undefined) {
+      updateData.theme = preferences.theme;
+    }
+    if (preferences.socialLinks !== undefined) {
+      updateData.socialLinks = preferences.socialLinks;
+    }
+    if (preferences.personalDomain !== undefined) {
+      updateData.personalDomain = preferences.personalDomain;
+    }
+    if (preferences.profile?.name !== undefined) {
+      updateData.name = preferences.profile.name;
+    }
+    if (preferences.profile?.bio !== undefined) {
+      updateData.bio = preferences.profile.bio;
+    }
+    if (preferences.profile?.avatarUrl !== undefined) {
+      updateData.avatar = preferences.profile.avatarUrl;
+    }
+    if (Array.isArray(preferences.selectedRepositories)) {
+      updateData.selectedRepositories = preferences.selectedRepositories;
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       user._id,
-      {
-        $set: {
-          theme: preferences.theme,
-          socialLinks: preferences.socialLinks,
-          personalDomain: preferences.personalDomain,
-          name: preferences.profile.name,
-          bio: preferences.profile.bio,
-          avatar: preferences.profile.avatarUrl,
-          selectedRepositories: preferences.selectedRepositories
-        }
-      },
+      { $set: updateData },
       { new: true }
     ) as UserDocument;
 
