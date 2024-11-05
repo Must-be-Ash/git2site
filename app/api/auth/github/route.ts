@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   if (url.searchParams.has('code')) {
     return redirect(url.toString());
   }
-  
+  // the production URL
   const redirectUri = 'https://www.git2site.pro/api/auth/github/callback';
   
   console.log('Starting GitHub OAuth flow');
