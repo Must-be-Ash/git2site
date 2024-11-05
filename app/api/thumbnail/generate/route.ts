@@ -1,7 +1,26 @@
 import { NextResponse } from 'next/server';
-import puppeteer from 'puppeteer';
+import chromium from '@sparticuz/chromium';
+import type { Browser, Page } from 'puppeteer-core';
+import puppeteer from 'puppeteer-core';
 import { Repository } from '@/lib/models/repository';
 import { connectDB } from '@/lib/db';
+
+const getBrowser = async () => {
+  // Local development
+  if (process.env.NODE_ENV === 'development') {
+    return puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      headless: true,
+    });
+  }
+  // Production - use chromium
+  return puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: true,
+  });
+};
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -43,24 +62,28 @@ export async function GET(request: Request) {
 }
 
 export async function POST(req: Request) {
-  try {
-    const { repositoryId, url } = await req.json();
+  let browser: Browser | null = null;
+  let page: Page | null = null;
 
-    if (!repositoryId || !url) {
-      return NextResponse.json({ error: 'Repository ID and URL are required' }, { status: 400 });
+  try {
+    const { url, width = 1200, height = 630 } = await req.json();
+
+    if (!url) {
+      return NextResponse.json({ error: 'URL is required' }, { status: 400 });
     }
 
-    const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      headless: true,
+    browser = await getBrowser();
+    page = await browser.newPage();
+
+    await page.setViewport({
+      width: Number(width),
+      height: Number(height),
+      deviceScaleFactor: 1,
     });
 
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1200, height: 630 });
-    
-    await page.goto(url, { 
+    await page.goto(url, {
       waitUntil: 'networkidle0',
-      timeout: 30000 
+      timeout: 30000,
     });
 
     const screenshot = await page.screenshot({
@@ -68,21 +91,18 @@ export async function POST(req: Request) {
       encoding: 'base64'
     });
 
-    await browser.close();
-
-    // Save the thumbnail URL to the database
-    await connectDB();
-    await Repository.findByIdAndUpdate(repositoryId, {
-      thumbnailUrl: `data:image/png;base64,${screenshot}`
+    return NextResponse.json({
+      thumbnail: `data:image/png;base64,${screenshot}`
     });
-
-    return NextResponse.json({ success: true });
 
   } catch (error) {
     console.error('Thumbnail generation error:', error);
     return NextResponse.json(
-      { error: 'Failed to generate thumbnail' }, 
+      { error: 'Failed to generate thumbnail' },
       { status: 500 }
     );
+  } finally {
+    if (page) await page.close();
+    if (browser) await browser.close();
   }
 }

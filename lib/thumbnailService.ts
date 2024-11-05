@@ -1,36 +1,61 @@
-import puppeteer from 'puppeteer';
+import type { Browser } from 'puppeteer-core';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import sharp from 'sharp';
 
-export async function generateThumbnail(url: string, repositoryName: string): Promise<string> {
-  console.log(`Generating thumbnail for ${url}`);
-  try {
-    const browser = await puppeteer.launch({
+const getBrowser = async () => {
+  // Local development
+  if (process.env.NODE_ENV === 'development') {
+    return puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      headless: 'new' as any,
+      headless: true,
     });
+  }
+  // Production - use chromium
+  return puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: true,
+  });
+};
+
+export async function generateThumbnail(url: string, repositoryName: string): Promise<string> {
+  let browser: Browser | null = null;
+  
+  try {
+    browser = await getBrowser();
     const page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 800 });
-    await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
     
-    // Wait for any lazy-loaded content
-    await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 3000)));
+    await page.setViewport({
+      width: 1200,
+      height: 630,
+      deviceScaleFactor: 1,
+    });
 
-    const screenshot = await page.screenshot({ type: 'png', fullPage: false });
-    await browser.close();
+    await page.goto(url, {
+      waitUntil: 'networkidle0',
+      timeout: 30000,
+    });
 
-    console.log('Screenshot captured');
+    const screenshot = await page.screenshot({
+      type: 'png',
+    });
 
-    const resizedImage = await sharp(screenshot)
-      .resize(600, 315, { fit: 'cover', position: 'top' })
+    // Optimize the image using sharp
+    const optimizedImage = await sharp(screenshot)
+      .resize(1200, 630, {
+        fit: 'contain',
+        background: { r: 255, g: 255, b: 255, alpha: 1 }
+      })
+      .jpeg({ quality: 80 })
       .toBuffer();
 
-    console.log('Image resized');
-
-    // For now, we'll return a data URL. In a production environment, you'd want to save this to a file or cloud storage.
-    const base64Image = resizedImage.toString('base64');
-    return `data:image/png;base64,${base64Image}`;
+    return `data:image/jpeg;base64,${optimizedImage.toString('base64')}`;
   } catch (error) {
-    console.error(`Error generating thumbnail for ${url}:`, error);
-    return '/placeholder-thumbnail.png'; // Return a placeholder image URL if thumbnail generation fails
+    console.error(`Error generating thumbnail for ${repositoryName}:`, error);
+    throw error;
+  } finally {
+    if (browser) await browser.close();
   }
 }
