@@ -5,7 +5,7 @@ import puppeteer from 'puppeteer-core';
 
 const getBrowser = async () => {
   // Local development
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV !== 'production') {
     return puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       headless: true,
@@ -18,15 +18,21 @@ const getBrowser = async () => {
       ...chromium.args,
       '--hide-scrollbars',
       '--disable-web-security',
-      '--font-render-hinting=none'
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-gpu',
+      '--ignore-certificate-errors'
     ],
     defaultViewport: {
       width: 1200,
       height: 630,
       deviceScaleFactor: 1,
     },
-    executablePath: await chromium.executablePath(),
-    headless: true as boolean,
+    executablePath: await (async () => {
+      const execPath = await chromium.executablePath();
+      return execPath || '/opt/chromium/chrome';
+    })(),
+    headless: true
   });
 };
 
@@ -44,6 +50,11 @@ export async function POST(req: Request) {
 
     console.log('Launching browser for URL:', url);
     browser = await getBrowser();
+    
+    if (!browser) {
+      throw new Error('Failed to launch browser');
+    }
+
     page = await browser.newPage();
     
     // Set a default background color
@@ -51,12 +62,12 @@ export async function POST(req: Request) {
     
     console.log('Navigating to page...');
     await page.goto(url, {
-      waitUntil: 'networkidle0',
+      waitUntil: ['networkidle0', 'load', 'domcontentloaded'],
       timeout: 30000,
     });
 
-    // Wait for network to be idle to ensure all content is loaded
-    await page.waitForNetworkIdle({ timeout: 5000 });
+    // Add a small delay to ensure everything is rendered
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     console.log('Taking screenshot...');
     const screenshot = await page.screenshot({
@@ -64,6 +75,7 @@ export async function POST(req: Request) {
       quality: 80,
       encoding: 'base64',
       fullPage: false,
+      captureBeyondViewport: false,
     });
 
     console.log('Preview generation successful');
@@ -79,7 +91,19 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   } finally {
-    if (page) await page.close();
-    if (browser) await browser.close();
+    if (page) {
+      try {
+        await page.close();
+      } catch (e) {
+        console.error('Error closing page:', e);
+      }
+    }
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (e) {
+        console.error('Error closing browser:', e);
+      }
+    }
   }
 }

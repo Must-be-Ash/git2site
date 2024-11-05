@@ -13,5 +13,8 @@
     "env": {
       "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
     }
+  },
+  "env": {
+    "CHROME_PATH": "/opt/chromium/chrome"
   }
 } 
