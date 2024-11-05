@@ -8,13 +8,14 @@ import { User } from "@/lib/models/user";
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  // Get the actual host from the request
-  const host = request.headers.get('host') || 'git2site.pro';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  const baseUrl = `${protocol}://${host}`;
-
+  // Hardcode the base URL for production
+  const baseUrl = 'https://www.git2site.pro';
+  
   try {
     console.log("=== GitHub Callback Process Started ===");
+    console.log("Request URL:", request.url);
+    console.log("Request headers:", Object.fromEntries(request.headers));
+
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
 
