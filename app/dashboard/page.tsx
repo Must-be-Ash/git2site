@@ -259,7 +259,7 @@ export default function DashboardPage() {
           <div className="space-x-2">
             <Button onClick={handleSave}>
               <Save className="w-4 h-4 mr-2" />
-              Save Theme
+              Save Changes
             </Button>
             <Button onClick={handleShare}>
               <Share2 className="w-4 h-4 mr-2" />

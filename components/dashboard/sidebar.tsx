@@ -305,13 +305,13 @@ export function Sidebar({
         )}
       </div>
 
-      {/* Save Button */}
+      {/* Save Button
       <Button 
         className="w-full"
         onClick={handleSaveAll}
       >
         Save Changes
-      </Button>
+      </Button> */}
     </div>
   );
 }
