@@ -170,7 +170,7 @@ export function Sidebar({
         theme={theme} 
         onThemeChange={onThemeChange} 
       />
-      <ColorPicker
+      {/* <ColorPicker
         label="Button Icon Color"
         value={theme.colors['button-foreground']}
         onChange={onButtonIconColorChange}
@@ -184,7 +184,7 @@ export function Sidebar({
         label="Language Tag Color"
         value={theme.colors.tag || ''}
         onChange={onLanguageTagColorChange}
-      />
+      /> */}
       
       <div className="border-t pt-4 mt-4">
         <h3 className="text-lg font-semibold mb-2">Social Links</h3>

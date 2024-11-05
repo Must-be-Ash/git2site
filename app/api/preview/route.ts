@@ -13,12 +13,19 @@ const getBrowser = async () => {
   }
 
   // Production - Vercel serverless environment
-  await chromium.font('/var/task/fonts/NotoSans-Regular.ttf'); // Optional: Add custom font
-  
   return puppeteer.launch({
-    args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
-    defaultViewport: chromium.defaultViewport,
-    executablePath: await chromium.executablePath('/var/task/bin'),
+    args: [
+      ...chromium.args,
+      '--hide-scrollbars',
+      '--disable-web-security',
+      '--font-render-hinting=none'
+    ],
+    defaultViewport: {
+      width: 1200,
+      height: 630,
+      deviceScaleFactor: 1,
+    },
+    executablePath: await chromium.executablePath(),
     headless: true as boolean,
   });
 };
@@ -39,23 +46,24 @@ export async function POST(req: Request) {
     browser = await getBrowser();
     page = await browser.newPage();
     
-    await page.setViewport({
-      width: 1200,
-      height: 630,
-      deviceScaleFactor: 1,
-    });
-
+    // Set a default background color
+    await page.evaluateHandle('document.documentElement.style.background = "white"');
+    
     console.log('Navigating to page...');
     await page.goto(url, {
       waitUntil: 'networkidle0',
       timeout: 30000,
     });
 
+    // Wait for network to be idle to ensure all content is loaded
+    await page.waitForNetworkIdle({ timeout: 5000 });
+
     console.log('Taking screenshot...');
     const screenshot = await page.screenshot({
       type: 'jpeg',
       quality: 80,
-      encoding: 'base64'
+      encoding: 'base64',
+      fullPage: false,
     });
 
     console.log('Preview generation successful');
