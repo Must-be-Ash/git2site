@@ -2,13 +2,11 @@
   "functions": {
     "app/api/preview/route.ts": {
       "memory": 3008,
-      "maxDuration": 60,
-      "runtime": "nodejs18.x"
+      "maxDuration": 60
     },
     "app/api/thumbnail/generate/route.ts": {
       "memory": 3008,
-      "maxDuration": 60,
-      "runtime": "nodejs18.x"
+      "maxDuration": 60
     }
   },
   "build": {
