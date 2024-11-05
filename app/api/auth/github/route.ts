@@ -3,17 +3,15 @@ import { redirect } from 'next/navigation'
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  // Get the actual host from the request
-  const host = request.headers.get('host') || '';
-  const isProduction = !host.includes('localhost') && !host.includes('vercel.app');
+  // Prevent multiple redirects by checking if we're already in the OAuth flow
+  const url = new URL(request.url);
+  if (url.searchParams.has('code')) {
+    return redirect(url.toString());
+  }
   
-  // Use the exact same domain as registered in GitHub OAuth App
-  const redirectUri = isProduction
-    ? 'https://www.git2site.pro/api/auth/github/callback'
-    : 'http://localhost:3000/api/auth/github/callback';
+  const redirectUri = 'https://www.git2site.pro/api/auth/github/callback';
   
-  console.log('Host:', host);
-  console.log('Environment:', process.env.NODE_ENV);
+  console.log('Starting GitHub OAuth flow');
   console.log('Using redirect URI:', redirectUri);
 
   const params = new URLSearchParams({
@@ -24,7 +22,5 @@ export async function GET(request: Request) {
   })
 
   const authUrl = `https://github.com/login/oauth/authorize?${params.toString()}`;
-  console.log('Redirecting to GitHub with URL:', authUrl);
-
   return redirect(authUrl);
 }

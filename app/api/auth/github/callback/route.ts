@@ -8,22 +8,11 @@ import { User } from "@/lib/models/user";
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  // Get the actual host from the request
-  const host = request.headers.get('host') || '';
-  const isProduction = !host.includes('localhost') && !host.includes('vercel.app');
-  
-  // Use the exact same domain as registered in GitHub OAuth App
-  const baseUrl = isProduction
-    ? 'https://www.git2site.pro'
-    : 'http://localhost:3000';
+  const baseUrl = 'https://www.git2site.pro';
   
   try {
     console.log("=== GitHub Callback Process Started ===");
-    console.log("Host:", host);
-    console.log("Is Production:", isProduction);
-    console.log("Base URL:", baseUrl);
     
-    // Validate the state parameter to prevent CSRF attacks
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
     const state = searchParams.get("state");
@@ -37,10 +26,13 @@ export async function GET(request: Request) {
     let accessToken;
     try {
       accessToken = await exchangeCodeForAccessToken(code);
-      console.log("Successfully obtained new access token");
-    } catch (error) {
+      if (!accessToken) {
+        throw new Error("No access token received");
+      }
+      console.log("Successfully obtained access token");
+    } catch (error: any) {
       console.error("Token exchange error:", error);
-      return NextResponse.redirect(`${baseUrl}/login?error=token_exchange`);
+      return NextResponse.redirect(`${baseUrl}/login?error=token_exchange&details=${encodeURIComponent(error.message)}`);
     }
 
     // Get GitHub user data

@@ -154,42 +154,27 @@ export async function fetchUserProfile(username: string, accessToken: string): P
   }
 }
 
-export async function exchangeCodeForAccessToken(code: string): Promise<string> {
-  // Determine if we're in production based on the request headers or environment
-  const baseUrl = process.env.NODE_ENV === 'production' 
-    ? 'https://git2site.pro' 
-    : 'http://localhost:3000';
-
+export async function exchangeCodeForAccessToken(code: string) {
+  console.log("Starting token exchange with code:", code);
+  
   const response = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Accept': 'application/json'
+      'Accept': 'application/json',
     },
     body: JSON.stringify({
       client_id: process.env.GITHUB_CLIENT_ID,
       client_secret: process.env.GITHUB_CLIENT_SECRET,
-      code: code,
-      redirect_uri: `${baseUrl}/api/auth/github/callback`
-    })
+      code,
+    }),
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('GitHub token exchange failed:', errorText);
-    throw new Error('Failed to exchange code for token');
-  }
-
   const data = await response.json();
-  
-  if (data.error) {
-    console.error('GitHub OAuth error:', data);
-    throw new Error(`GitHub OAuth error: ${data.error}`);
-  }
+  console.log("Token exchange response:", data);
 
-  if (!data.access_token) {
-    console.error('No access token received:', data);
-    throw new Error('No access token received from GitHub');
+  if (data.error) {
+    throw new Error(`GitHub OAuth error: ${data.error}`);
   }
 
   return data.access_token;

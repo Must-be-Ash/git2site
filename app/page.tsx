@@ -94,7 +94,7 @@ createPortfolio('yourGithubUsername');
   }, [startAnimation])
 
   return (
-    <div className="min-h-screen flex flex-col bg-black text-white">
+    <div className="min-h-screen flex flex-col bg-white text-black">
       <header
         className={`fixed w-full z-50 transition-all duration-300 ${
           isHeaderVisible ? 'bg-background shadow-lg py-4' : 'bg-transparent py-6'
@@ -183,7 +183,7 @@ createPortfolio('yourGithubUsername');
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
               >
-                <Button asChild className="bg-white text-black hover:bg-[#ff8533] px-8 py-3 text-lg">
+                <Button asChild className="bg-[#ff8533] text-black hover:bg-[#1e1e1e] hover:text-white px-8 py-3 text-lg">
                   <Link href="/api/auth/github">Login with GitHub</Link>
                 </Button>
               </motion.div>
@@ -217,15 +217,6 @@ createPortfolio('yourGithubUsername');
           </div>
         </section>
 
-        {/* Features Section */}
-        <section ref={featuresRef} className="py-20 md:py-32">
-          {/* ... (keep the existing features section) ... */}
-        </section>
-
-        {/* Benefits Section */}
-        <section ref={benefitsRef} className="py-20 md:py-32 bg-muted">
-          {/* ... (keep the existing benefits section) ... */}
-        </section>
       </main>
 
       <footer className="bg-[#242424] text-black py-8">
