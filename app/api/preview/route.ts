@@ -8,20 +8,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 });
     }
 
-    // Return an iframe-based preview
+    // Return the URL directly for the preview
     return NextResponse.json({
-      preview: {
-        type: 'iframe',
-        url: url
-      }
+      previewUrl: url,
+      isLoading: false,
+      error: null
     });
 
   } catch (error: unknown) {
     console.error('Preview generation error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return NextResponse.json(
-      { error: 'Failed to generate preview', details: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      previewUrl: null,
+      isLoading: false,
+      error: errorMessage
+    });
   }
 }

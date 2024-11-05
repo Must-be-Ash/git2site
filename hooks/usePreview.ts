@@ -2,74 +2,50 @@
 
 import { useState, useEffect } from 'react';
 
-interface PreviewResult {
+interface PreviewState {
   previewUrl: string | null;
   isLoading: boolean;
-  error: Error | null;
+  error: string | null;
 }
 
-export function usePreview(url?: string): PreviewResult {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export function usePreview(websiteUrl?: string): PreviewState {
+  const [state, setState] = useState<PreviewState>({
+    previewUrl: null,
+    isLoading: false,
+    error: null
+  });
 
   useEffect(() => {
-    if (!url) {
-      setIsLoading(false);
-      setPreviewUrl('/placeholder-project.png');
+    if (!websiteUrl) {
+      setState({ previewUrl: null, isLoading: false, error: null });
       return;
     }
 
-    const generatePreview = async () => {
-      try {
-        setIsLoading(true);
+    setState(prev => ({ ...prev, isLoading: true }));
 
-        // Use our own preview API endpoint
-        const response = await fetch('/api/preview', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ url }),
+    fetch('/api/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: websiteUrl })
+    })
+      .then(res => res.json())
+      .then(data => {
+        setState({
+          previewUrl: data.previewUrl,
+          isLoading: false,
+          error: data.error
         });
+      })
+      .catch(error => {
+        setState({
+          previewUrl: null,
+          isLoading: false,
+          error: error.message
+        });
+      });
+  }, [websiteUrl]);
 
-        if (!response.ok) {
-          throw new Error('Failed to generate preview');
-        }
-
-        const data = await response.json();
-        
-        if (data.preview) {
-          setPreviewUrl(data.preview);
-          console.log('Preview generated successfully for:', url);
-        } else {
-          // If preview generation fails, try to get og:image
-          const ogResponse = await fetch(`/api/og-image?url=${encodeURIComponent(url)}`);
-          const ogData = await ogResponse.json();
-          
-          if (ogData.imageUrl) {
-            setPreviewUrl(ogData.imageUrl);
-            console.log('Using og:image for:', url);
-          } else {
-            setPreviewUrl('/placeholder-project.png');
-            console.log('Using placeholder for:', url);
-          }
-        }
-
-        setError(null);
-      } catch (err) {
-        console.error('Preview generation error:', err);
-        setError(err instanceof Error ? err : new Error('Failed to generate preview'));
-        setPreviewUrl('/placeholder-project.png');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    generatePreview();
-  }, [url]);
-
-  return { previewUrl, isLoading, error };
+  return state;
 }
 
 export default usePreview;
