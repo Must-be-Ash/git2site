@@ -8,20 +8,22 @@ import { User } from "@/lib/models/user";
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  // Hardcode the base URL for production
-  const baseUrl = 'https://www.git2site.pro';
+  // Use environment-specific base URL as per GitHub docs
+  const baseUrl = process.env.NODE_ENV === 'production'
+    ? 'https://git2site.pro'
+    : 'http://localhost:3000';
   
   try {
     console.log("=== GitHub Callback Process Started ===");
-    console.log("Request URL:", request.url);
-    console.log("Request headers:", Object.fromEntries(request.headers));
-
+    
+    // Validate the state parameter to prevent CSRF attacks
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
+    const state = searchParams.get("state");
 
-    if (!code) {
-      console.error("No code provided in callback");
-      return NextResponse.redirect(`${baseUrl}/login?error=no_code`);
+    if (!code || !state) {
+      console.error("Missing code or state parameter");
+      return NextResponse.redirect(`${baseUrl}/login?error=invalid_request`);
     }
 
     // Exchange code for access token
