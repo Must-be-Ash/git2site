@@ -19,7 +19,7 @@ const getBrowser = async () => {
     args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
     defaultViewport: chromium.defaultViewport,
     executablePath: await chromium.executablePath('/var/task/bin'),
-    headless: chromium.headless,
+    headless: true as boolean,
   });
 };
 
