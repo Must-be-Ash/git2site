@@ -8,13 +8,20 @@ import { User } from "@/lib/models/user";
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  // Use environment-specific base URL as per GitHub docs
-  const baseUrl = process.env.NODE_ENV === 'production'
-    ? 'https://git2site.pro'
+  // Get the actual host from the request
+  const host = request.headers.get('host') || '';
+  const isProduction = !host.includes('localhost') && !host.includes('vercel.app');
+  
+  // Use the exact same domain as registered in GitHub OAuth App
+  const baseUrl = isProduction
+    ? 'https://www.git2site.pro'
     : 'http://localhost:3000';
   
   try {
     console.log("=== GitHub Callback Process Started ===");
+    console.log("Host:", host);
+    console.log("Is Production:", isProduction);
+    console.log("Base URL:", baseUrl);
     
     // Validate the state parameter to prevent CSRF attacks
     const { searchParams } = new URL(request.url);
